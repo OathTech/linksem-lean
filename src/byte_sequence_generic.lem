@@ -37,7 +37,8 @@ let find_byte bs b =
       match find_byte xs b with
         | Just n  -> Just n + 1
         | Nothing -> Nothing
-      )
+      end)
+  end
 
 val acquire : string -> error byte_sequence
 let acquire filename = fail "acquire: not available on this backend"
