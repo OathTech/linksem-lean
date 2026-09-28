@@ -96,3 +96,23 @@ let to_dual_bytes u : char * char =
   let (b3, b2, b1, b0) = to_bytes u in
     b3, b2
 ;;
+
+(* unsigned_char: 8-bit arithmetic on the same representation. Lem's
+   unsigned_char used the 32-bit operations above, so values did not wrap
+   at 256 (spec: "wrapping around if the size of the nat exceeds the storage
+   capacity of an unsigned char"; the Isabelle/HOL reps are 8-bit words),
+   and byte_of_unsigned_char raised above 255 (linksem-lean findings N3). *)
+let uchar_modulus = Nat_big_num.of_int 256
+;;
+
+let uchar_of_bigint (i : Nat_big_num.num) : uint32 =
+  Nat_big_num.modulus i uchar_modulus
+;;
+
+let uchar_add l r : uint32 =
+  Nat_big_num.modulus (Nat_big_num.add l r) uchar_modulus
+;;
+
+let uchar_shift_left i s : uint32 =
+  Nat_big_num.modulus (Nat_big_num.shift_left i s) uchar_modulus
+;;

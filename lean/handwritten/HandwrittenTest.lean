@@ -65,3 +65,8 @@ end bytes
 -- filesystem path helpers (filesystem_wrapper.ml)
 #guard Filesystem_wrapper.dirname "/usr/lib/libc.so" == "/usr/lib"
 #guard Filesystem_wrapper.normalize "/usr/lib/../bin" == "/usr/bin"
+
+-- N3 (fixed): unsigned_char arithmetic wraps at 256
+#guard Uint32_wrapper.uchar_of_bigint 256 == 0
+#guard Uint32_wrapper.uchar_add 255 1 == 0
+#guard Uint32_wrapper.uchar_shift_left 0x1f 4 == 0xf0

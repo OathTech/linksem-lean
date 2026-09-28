@@ -104,6 +104,20 @@ unused pure `let _ = print ...` (the documented backend limitation), OCaml
 prints it. Fix [AGENT]: the two debug printers write to stderr
 (`Missing_pervasives.errln`); stdout is now identical on both targets.
 
+## F9. `unsigned_char` did not wrap at 256 (fixed; was N3)
+
+`unsigned_char` is backed by `Uint32_wrapper`, and its operations used the
+32-bit ones: `unsigned_char_of_natural 256` was 256, `unsigned_char_plus 255
+1` was 256, `unsigned_char_of_elf32_word` was the identity, and
+`byte_of_unsigned_char` then raised (`Char.chr`) on any value above 255.
+linksem's own specification says the conversion wraps "if the size of the
+nat exceeds the storage capacity of an unsigned char", and the Isabelle/HOL
+reps are 8-bit words. Reachable only with invalid inputs (e.g.
+`make_symbol_info` with a binding >= 16). Fix [USER 2026-09-28: upstream
+flaws are fixed, per the charter; AGENT design]: `Uint32_wrapper.uchar_*`
+(modulo 256) on both sides for construction, `plus`, `lshift` and the word
+conversion (`land`/`lor`/`rshift` cannot leave [0, 256)).
+
 ## Divergences mirrored deliberately (not fixed)
 
 - **N1** `Byte_sequence_wrapper.compare` returns `bs2 - bs1` (by length, then
@@ -115,10 +129,6 @@ prints it. Fix [AGENT]: the two debug printers write to stderr
   on the representation `{bytes; start; len}` in OCaml (polymorphic
   compare), i.e. on the whole underlying buffer, not on the window's
   contents. The Lean twin's `Ord`/`BEq` on `byte_sequence` mirror this.
-- **N3** `unsigned_char` is backed by the 32-bit wrapper, so its arithmetic
-  does not wrap at 256 (the Isabelle/HOL reps use 8-bit words), and
-  `byte_of_unsigned_char` raises above 255. Mirrored; recorded for a
-  follow-up decision (fixing it changes the representation).
 
 ## Structural changes for the Lean target (behaviour-preserving for OCaml)
 

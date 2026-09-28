@@ -56,8 +56,8 @@ declare coq      target_rep function natural_of_unsigned_char = `nat_of_unsigned
   *)
 val unsigned_char_of_natural : natural -> unsigned_char
 
-declare ocaml    target_rep function unsigned_char_of_natural   = `Uint32_wrapper.of_bigint`
-declare lean     target_rep function unsigned_char_of_natural = `Uint32_wrapper.of_bigint`
+declare ocaml    target_rep function unsigned_char_of_natural   = `Uint32_wrapper.uchar_of_bigint`
+declare lean     target_rep function unsigned_char_of_natural = `Uint32_wrapper.uchar_of_bigint`
 declare isabelle target_rep function unsigned_char_of_natural   = `Elf_Types_Local.unsigned_char_of_nat`
 declare hol      target_rep function unsigned_char_of_natural x = (`n2w` `:` `num` `->` `unsigned_char`) x
 declare coq      target_rep function unsigned_char_of_natural   = `unsigned_char_of_nat`
@@ -89,8 +89,8 @@ declare coq      target_rep function unsigned_char_lor = `unsigned_char_lor`
   *)
 val unsigned_char_lshift : unsigned_char -> nat -> unsigned_char
 
-declare ocaml    target_rep function unsigned_char_lshift = `Uint32_wrapper.shift_left`
-declare lean     target_rep function unsigned_char_lshift = `Uint32_wrapper.shift_left`
+declare ocaml    target_rep function unsigned_char_lshift = `Uint32_wrapper.uchar_shift_left`
+declare lean     target_rep function unsigned_char_lshift = `Uint32_wrapper.uchar_shift_left`
 declare isabelle target_rep function unsigned_char_lshift = `Elf_Types_Local.unsigned_char_lshift`
 declare hol      target_rep function unsigned_char_lshift = `word_lsl`
 declare coq      target_rep function unsigned_char_lshift = `unsigned_char_lshift`
@@ -110,8 +110,8 @@ declare coq      target_rep function unsigned_char_rshift = `unsigned_char_rshif
   *)
 val unsigned_char_plus   : unsigned_char -> unsigned_char -> unsigned_char
 
-declare ocaml    target_rep function unsigned_char_plus = `Uint32_wrapper.add`
-declare lean     target_rep function unsigned_char_plus = `Uint32_wrapper.add`
+declare ocaml    target_rep function unsigned_char_plus = `Uint32_wrapper.uchar_add`
+declare lean     target_rep function unsigned_char_plus = `Uint32_wrapper.uchar_add`
 declare isabelle target_rep function unsigned_char_plus = `Elf_Types_Local.unsigned_char_plus`
 declare hol      target_rep function unsigned_char_plus = `word_add`
 declare coq      target_rep function unsigned_char_plus = `unsigned_char_plus`
@@ -793,9 +793,8 @@ let read_elf32_word endian bs0 =
 
 val unsigned_char_of_elf32_word : elf32_word -> unsigned_char
 
-declare ocaml target_rep function unsigned_char_of_elf32_word = ``
-declare lean     target_rep function unsigned_char_of_elf32_word = ``
-
+declare ocaml target_rep function unsigned_char_of_elf32_word = `Uint32_wrapper.uchar_of_bigint`
+declare lean     target_rep function unsigned_char_of_elf32_word = `Uint32_wrapper.uchar_of_bigint`
 val equal_elf32_word : elf32_word -> elf32_word -> bool
 
 let inline {isabelle; ocaml; hol; lean} equal_elf32_word = unsafe_structural_equality

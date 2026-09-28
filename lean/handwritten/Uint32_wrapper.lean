@@ -55,4 +55,13 @@ def to_dual_bytes (u : uint32) : UInt8 × UInt8 :=
   let (b0, b1, _, _) := to_bytes u
   (b0, b1)
 
+/-! unsigned_char: 8-bit arithmetic on the same representation (uint32_wrapper.ml
+    `uchar_*`; findings N3, fixed on both sides). -/
+
+def uchar_of_bigint (i : Nat) : uint32 := i % 256
+
+def uchar_add (l r : uint32) : uint32 := (l + r) % 256
+
+def uchar_shift_left (i : uint32) (s : Nat) : uint32 := (i <<< s) % 256
+
 end Uint32_wrapper
