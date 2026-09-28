@@ -209,7 +209,7 @@ type elf64_interpreted_sections = list elf64_interpreted_section
   * of interpreted section, [sect].
   *)
 val string_of_elf32_interpreted_section : elf32_interpreted_section -> string
-let {ocaml} string_of_elf32_interpreted_section is =
+let {ocaml; lean} string_of_elf32_interpreted_section is =
    unlines [
      "Name: " ^ is.elf32_section_name_as_string ^ "(" ^ (show is.elf32_section_name) ^ ")"
    ; "Type: " ^ show is.elf32_section_type 
@@ -227,7 +227,7 @@ let {ocaml} string_of_elf32_interpreted_section is =
   * of interpreted section, [sect].
   *)
 val string_of_elf64_interpreted_section : elf64_interpreted_section -> string
-let {ocaml} string_of_elf64_interpreted_section is =
+let {ocaml; lean} string_of_elf64_interpreted_section is =
    unlines [
      "Name: " ^ is.elf64_section_name_as_string ^ "(" ^ (show is.elf64_section_name) ^ ")"
    ; "Type: " ^ show is.elf64_section_type 

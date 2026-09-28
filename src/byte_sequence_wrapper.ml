@@ -63,20 +63,13 @@ let concat l = match l with
     ) l;
     of_bytes (Buffer.to_bytes buf)
 
+(* Pad with NUL bytes on the right up to [len]; unchanged if already at least
+   [len] long (byte_sequence_generic.lem). The previous version computed the
+   padding as [bs.len - len]: it never padded a short sequence, and appended
+   ASCII '0' bytes to a long one (linksem-lean findings F6). *)
 let zero_pad_to_length len bs =
-  let pad = bs.len - len in
-  if pad <= 0 then
-    bs
-  else
-    let grow = (capacity bs) - len in
-    let prev_len = Bytes.length bs.bytes in
-    let b = if grow > 0 then
-      Bytes.extend bs.bytes 0 grow
-    else
-      bs.bytes
-    in
-    Bytes.fill b prev_len pad '0';
-    { bs with bytes = b; len = bs.len + pad }
+  if bs.len >= len then bs
+  else concat [bs; make (len - bs.len) '\000']
 
 let to_string bs =
   Bytes.sub_string bs.bytes bs.start bs.len

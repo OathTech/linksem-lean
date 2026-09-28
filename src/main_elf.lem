@@ -15,6 +15,7 @@ open import List
 open import Num
 open import String
 open import Tuple
+open import Either
 
 open import Byte_sequence
 open import Default_printing
@@ -187,15 +188,14 @@ let obtain_abi_specific_string_of_reloc_type mach =
   else
     const "Cannot deduce ABI"
     
-let _ =
-  let res =
-    let (flag, arg) =
-      match argv with
-        | progname::flag::fname::more -> (flag, fname)
-        | _                           -> failwith "usage: main_elf <flag> <fname>"
-      end
-    in
-    Byte_sequence.acquire arg    >>= fun bs0 ->
+(** [main_elf_run flag arg bs0] is the whole of the test program except the
+  * I/O: it interprets [bs0] (the contents of file [arg]) as requested by
+  * [flag] and returns the text to print. Split out of the top-level driver
+  * below (unchanged behaviour) so that targets without top-level effects
+  * (Lean) can share it with their own driver.
+  *)
+val main_elf_run : string -> string -> byte_sequence -> error string
+let main_elf_run flag arg bs0 =
     repeatM' Elf_header.ei_nident bs0 (read_unsigned_char Endianness.default_endianness) >>= fun (ident, bs) ->
     match List.index ident 4 with
       | Nothing -> failwith "ELF ident transcription error"
@@ -386,10 +386,31 @@ let _ =
         else
           failwith "ELF ident transcription error"
     end
-  in
+
+(** [main_elf_render res] is what the driver prints for [res]: [Left] text
+  * goes to stderr, [Right] text to stdout.
+  *)
+val main_elf_render : error string -> either string string
+let main_elf_render res =
     match res with
-      | Fail err  -> Missing_pervasives.errln ("[!]: " ^ err)
-      | Success e -> Missing_pervasives.outln (show e)
+      | Fail err  -> Left ("[!]: " ^ err)
+      | Success e -> Right (show e)
+    end
+
+let {ocaml} _ =
+  let res =
+    let (flag, arg) =
+      match argv with
+        | progname::flag::fname::more -> (flag, fname)
+        | _                           -> failwith "usage: main_elf <flag> <fname>"
+      end
+    in
+    Byte_sequence.acquire arg    >>= fun bs0 ->
+    main_elf_run flag arg bs0
+  in
+    match main_elf_render res with
+      | Left err -> Missing_pervasives.errln err
+      | Right e  -> Missing_pervasives.outln e
     end
 
 (*

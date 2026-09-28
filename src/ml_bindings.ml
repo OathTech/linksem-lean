@@ -19,54 +19,66 @@ let hex_string_of_nat_pad2 i : string =
   Printf.sprintf "%02i" i
 ;;
 
-let hex_string_of_big_int_pad6 i : string =
-  let i0 = Nat_big_num.to_int64 i in
-    Printf.sprintf "%06Lx" i0
+(* Hexadecimal rendering of a big number, lowercase, left-padded with zeros
+   to [width] digits (a wider value is not truncated). Negative values
+   print as their 64-bit two's complement, as the previous
+   [Printf.sprintf "%0NLx" (Nat_big_num.to_int64 i)] did. That version
+   raised [Failure "int64_of_big_int"] on any value >= 2^63, e.g. every
+   upper-half address (linksem-lean findings F5); the output is unchanged
+   wherever it used to succeed. *)
+let hex_string_of_big_int_padded width i : string =
+  let open Nat_big_num in
+  let i = if less i zero then add i (pow_int_positive 2 64) else i in
+  let sixteen = of_int 16 in
+  let digit d = "0123456789abcdef".[to_int d] in
+  let rec go n acc =
+    if equal n zero then acc
+    else go (div n sixteen) (digit (modulus n sixteen) :: acc) in
+  let ds = if equal i zero then ['0'] else go i [] in
+  let s = String.init (List.length ds) (List.nth ds) in
+  if String.length s >= width then s
+  else String.make (width - String.length s) '0' ^ s
 ;;
 
-let hex_string_of_big_int_pad7 i : string =
-  let i0 = Nat_big_num.to_int64 i in
-    Printf.sprintf "%07Lx" i0
+let hex_string_of_big_int_pad6 i : string = hex_string_of_big_int_padded 6 i
 ;;
 
-let hex_string_of_big_int_pad2 i : string =
-  let i0 = Nat_big_num.to_int64 i in
-    Printf.sprintf "%02Lx" i0
+let hex_string_of_big_int_pad7 i : string = hex_string_of_big_int_padded 7 i
 ;;
 
-let hex_string_of_big_int_pad4 i : string =
-  let i0 = Nat_big_num.to_int64 i in
-    Printf.sprintf "%04Lx" i0
+let hex_string_of_big_int_pad2 i : string = hex_string_of_big_int_padded 2 i
 ;;
 
-let hex_string_of_big_int_pad5 i : string =
-  let i0 = Nat_big_num.to_int64 i in
-    Printf.sprintf "%05Lx" i0
+let hex_string_of_big_int_pad4 i : string = hex_string_of_big_int_padded 4 i
 ;;
 
-let hex_string_of_big_int_pad8 i : string =
-  let i0 = Nat_big_num.to_int64 i in
-    Printf.sprintf "%08Lx" i0
+let hex_string_of_big_int_pad5 i : string = hex_string_of_big_int_padded 5 i
 ;;
 
-let hex_string_of_big_int_pad16 i : string =
-  let i0 = Nat_big_num.to_int64 i in
-    Printf.sprintf "%016Lx" i0
+let hex_string_of_big_int_pad8 i : string = hex_string_of_big_int_padded 8 i
+;;
+
+let hex_string_of_big_int_pad16 i : string = hex_string_of_big_int_padded 16 i
 ;;
 
 let hex_string_of_big_int_no_padding i : string =
-  let i0 = Nat_big_num.to_int64 i in
-    if Int64.compare i0 Int64.zero < 0 then
-      let i0 = Int64.neg i0 in
-        Printf.sprintf "-%Lx" i0
-    else
-      Printf.sprintf "%Lx" i0
+  if Nat_big_num.less i Nat_big_num.zero then
+    "-" ^ hex_string_of_big_int_padded 0 (Nat_big_num.negate i)
+  else
+    hex_string_of_big_int_padded 0 i
 ;;
 
-let bytes_of_int32 (i : Int32.t) = assert false
+(* Least significant byte first, the order [bytes_of_elf32_sword] and
+   [bytes_of_elf64_sxword] destructure. Both were [assert false]
+   (linksem-lean findings F2). *)
+let bytes_of_int32 (i : Int32.t) =
+  let b k = Char.chr (Int32.to_int (Int32.logand (Int32.shift_right_logical i (8 * k)) 0xffl)) in
+    (b 0, b 1, b 2, b 3)
 ;;
 
-let bytes_of_int64 (i : Int64.t) = assert false
+let bytes_of_int64 (i : Int64.t) =
+  let b k = Char.chr (Int64.to_int (Int64.logand (Int64.shift_right_logical i (8 * k)) 0xffL)) in
+    (b 0, b 1, b 2, b 3, b 4, b 5, b 6, b 7)
 ;;
 
 let int32_of_quad c1 c2 c3 c4 =

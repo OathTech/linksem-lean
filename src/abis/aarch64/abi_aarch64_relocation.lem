@@ -165,7 +165,7 @@ let r_aarch64_irelative : natural = 1032
   * relocation type [m].
   *)
 val string_of_aarch64_relocation_type : natural -> string
-let {ocaml} string_of_aarch64_relocation_type rel_type =
+let {ocaml; lean} string_of_aarch64_relocation_type rel_type =
   if rel_type = r_aarch64_none then
     "R_AARCH64_NONE"
   else if rel_type = r_aarch64_withdrawn then

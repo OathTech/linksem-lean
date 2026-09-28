@@ -7,40 +7,53 @@ let max_int =
     (Nat_big_num.of_int 1)
 ;;
 
+(* 2^64: the modulus of 64-bit arithmetic. Every operation below used to
+   reduce with [Nat_big_num.modulus _ max_int], i.e. modulo 2^64 - 1, so
+   that e.g. [of_bigint (2^64 - 1)] was 0 (linksem-lean findings F1). *)
+let modulus =
+  Nat_big_num.pow_int_positive 2 64
+;;
+
 let add l r =
-  Nat_big_num.modulus (Nat_big_num.add l r) max_int
+  Nat_big_num.modulus (Nat_big_num.add l r) modulus
 ;;
 
 let minus l r =
-  Nat_big_num.modulus (Nat_big_num.sub l r) max_int
+  Nat_big_num.modulus (Nat_big_num.sub l r) modulus
 ;;
 
 let of_string s =
-  Nat_big_num.modulus (Nat_big_num.of_string s) max_int
+  Nat_big_num.modulus (Nat_big_num.of_string s) modulus
 ;;
 
 let of_int i =
-  Nat_big_num.modulus (Nat_big_num.of_int i) max_int
+  Nat_big_num.modulus (Nat_big_num.of_int i) modulus
 ;;
 
 let of_int64 (i : Int64.t) =
-  Nat_big_num.modulus (Nat_big_num.of_int64 i) max_int
+  Nat_big_num.modulus (Nat_big_num.of_int64 i) modulus
 ;;
 
 let shift_left i s =
-  Nat_big_num.modulus (Nat_big_num.shift_left i s) max_int
+  Nat_big_num.modulus (Nat_big_num.shift_left i s) modulus
 ;;
 
 let shift_right i s =
-  Nat_big_num.modulus (Nat_big_num.shift_right i s) max_int
+  Nat_big_num.modulus (Nat_big_num.shift_right i s) modulus
 ;;
 
 let logand l r =
-  Nat_big_num.modulus (Nat_big_num.bitwise_and l r) max_int
+  Nat_big_num.modulus (Nat_big_num.bitwise_and l r) modulus
 ;;
 
 let logor l r =
-  Nat_big_num.modulus (Nat_big_num.bitwise_or l r) max_int
+  Nat_big_num.modulus (Nat_big_num.bitwise_or l r) modulus
+;;
+
+(* [elf64_xword_lxor]'s OCaml target rep named this without it existing
+   (linksem-lean findings F3). *)
+let logxor l r =
+  Nat_big_num.modulus (Nat_big_num.bitwise_xor l r) modulus
 ;;
 
 let to_string l =
@@ -78,7 +91,7 @@ let to_bigint (u : uint64) : Nat_big_num.num =
 ;;
 
 let of_bigint (u : Nat_big_num.num) : uint64 =
-  Nat_big_num.modulus u max_int
+  Nat_big_num.modulus u modulus
 ;;
 
 let to_bytes u : char * char * char * char * char * char * char * char =

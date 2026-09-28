@@ -97,7 +97,7 @@ let linkable_item_of_input_item_and_options a it opts =
     end
 
 val string_of_linkable : linkable_item -> string
-let {ocaml} string_of_linkable l = match l with
+let {ocaml; lean} string_of_linkable l = match l with
     (_, item, _) -> show item
 end
 

@@ -93,7 +93,7 @@ let gnu_df_1_disprelpnd : natural = 65536 (*0x00010000*)
   * extensions flag_1 value [m].
   *)
 val gnu_string_of_dt_flag_1 : natural -> string
-let {ocaml} gnu_string_of_dt_flag_1 flag =
+let {ocaml; lean} gnu_string_of_dt_flag_1 flag =
   if check_flag flag 0 then
     "None"
   else if check_flag flag gnu_df_1_now then
@@ -475,7 +475,7 @@ let gnu_ext_elf64_value_of_elf64_dyn dyn stbl =
   * GNU extensions dynamic tag value [m].
   *)
 val string_of_gnu_ext_dynamic_tag0 : natural -> string
-let {ocaml} string_of_gnu_ext_dynamic_tag0 m =
+let {ocaml; lean} string_of_gnu_ext_dynamic_tag0 m =
   if m = elf_dt_gnu_hash then
     "GNU_HASH"
   else if m = elf_dt_gnu_flags_1 then
@@ -505,7 +505,7 @@ let {ocaml} string_of_gnu_ext_dynamic_tag0 m =
   * GNU extensions dynamic tag value [m].
   *)
 val string_of_gnu_ext_dynamic_tag : natural -> string
-let {ocaml} string_of_gnu_ext_dynamic_tag m =
+let {ocaml; lean} string_of_gnu_ext_dynamic_tag m =
   if m >= elf_dt_gnu_addrrnglo && m <= elf_dt_gnu_addrrnghi then
     string_of_gnu_ext_dynamic_tag0 m
   else if m >= elf_dt_gnu_valrnglo && m <= elf_dt_gnu_valrnghi then

@@ -1,13 +1,17 @@
 open import Error
+declare {lean} extra_import `Filesystem_wrapper`
 
 val dirname : string -> string
 declare ocaml target_rep function dirname = `Filesystem_wrapper.dirname`
+declare lean     target_rep function dirname = `Filesystem_wrapper.dirname`
 
 val normalize : string -> string
 declare ocaml target_rep function normalize = `Filesystem_wrapper.normalize`
+declare lean     target_rep function normalize = `Filesystem_wrapper.normalize`
 
 val to_absolute : string -> string -> string
 declare ocaml target_rep function to_absolute = `Filesystem_wrapper.to_absolute`
+declare lean     target_rep function to_absolute = `Filesystem_wrapper.to_absolute`
 
 val readlink : string -> error (string)
 declare ocaml target_rep function readlink = `Filesystem_wrapper.readlink`
@@ -20,6 +24,8 @@ declare ocaml target_rep function realpath = `Filesystem_wrapper.realpath`
 
 val readdir : string -> error (list string)
 declare ocaml target_rep function readdir = `Filesystem_wrapper.readdir`
+declare lean     target_rep function readdir = `Filesystem_wrapper.readdir`
 
 val file_exists : string -> bool
 declare ocaml target_rep function file_exists = `Sys.file_exists`
+declare lean     target_rep function file_exists = `Filesystem_wrapper.file_exists`

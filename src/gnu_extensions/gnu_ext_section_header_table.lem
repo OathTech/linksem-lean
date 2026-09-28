@@ -52,7 +52,7 @@ let sht_gnu_liblist : natural = (2 * 939524091) + 1 (* 0x6FFFFFF7 *)
   * GNU extension section type [m].
   *)
 val string_of_gnu_ext_section_type : natural -> string
-let {ocaml} string_of_gnu_ext_section_type i =
+let {ocaml; lean} string_of_gnu_ext_section_type i =
   if i = sht_gnu_hash then
     "GNU_HASH"
   else if i = sht_gnu_verdef then
