@@ -79,6 +79,31 @@ The generic implementation (`byte_sequence_generic.lem`) specifies right-
 padding with NUL bytes to `len`. Not used by the model today. Fix [AGENT]:
 follow the generic specification.
 
+## F7. DWARF coverage gaps (confirmed, not fixed)
+
+Identical failures in the OCaml and Lean builds on the corpus (both report
+the same message):
+- DWARF 5 units (GCC's default since 11) are read with the version-4 header
+  layout ("Pointer Size: 0", a garbage abbrev offset) and then fail with
+  `mydrop of debug_abbrev`; `-gdwarf-4` binaries work.
+- `DW_TAG_unspecified_type` (0x3b) is not recognised
+  (`analyse_type_info_top didn't recognise tag: 0x3b`; OCaml-compiled objects).
+- Location lists in optimised (`-O2`) DWARF-4 code fail
+  (`parse_location_list: Parse fail`).
+- One `parse_die returned Nothing` (a large SBCL object).
+Missing features rather than wrong behaviour; recorded, not fixed.
+
+## F8. Debug trace on stdout in `--debug-dump` (confirmed, fixed)
+
+`dwarf.lem`'s `my_debug4`/`my_debug5` printed to stdout (`my_debug` ..
+`my_debug3` are no-ops), and `my_debug4 (pp_compilation_unit_header cuh)`
+runs for every compilation unit, so every `--debug-dump=info`/`dies` output
+had a duplicate `**Compilation Unit @ offset ...` block interleaved (7 lines
+per CU on the probe binary). Found by the differential: Lean erases the
+unused pure `let _ = print ...` (the documented backend limitation), OCaml
+prints it. Fix [AGENT]: the two debug printers write to stderr
+(`Missing_pervasives.errln`); stdout is now identical on both targets.
+
 ## Divergences mirrored deliberately (not fixed)
 
 - **N1** `Byte_sequence_wrapper.compare` returns `bs2 - bs1` (by length, then
@@ -109,3 +134,63 @@ follow the generic specification.
   cannot name a definition `>>=`; lem-lean B1).
 - `src/lem.mk`: `lean-extraction` target (same module list and native
   byte-sequence implementation as the OCaml build).
+
+## Differential results (2026-09-28)
+
+`lean/diff_main_elf.sh`, corpus of 183 ELF files (x86-64 executables, PIEs,
+shared objects, relocatables; i386; big-endian PowerPC64; MIPS64; AArch64;
+linksem's own `test/` binaries), flags `--file-header --program-headers
+--section-headers --relocs --dynamic --symbols --in-out`: 1281 cases. Lean
+runs under `LEAN_ABORT_ON_PANIC=1`.
+
+Branch OCaml (`src/main_elf.opt`) vs Lean (`lean/.lake/build/bin/main_elf`),
+stdout byte-for-byte and exit class:
+- 1271 identical;
+- 6 both fail with the same message (`--symbols` on ELF32 files:
+  "Unrecognised flag", the ELF32 branch is commented out in main_elf.lem);
+- 4 OCaml timeouts at 300 s where Lean finished (`--in-out` on the four
+  largest files); run to completion (733-816 s), all 4 OCaml outputs are
+  byte-identical to Lean's.
+So: zero behavioural differences.
+
+Upstream OCaml (`master`, worktree) vs branch OCaml, same corpus and flags,
+60 s timeout (the largest `--in-out` cases take 12-14 min on OCaml): 1266
+identical; 6 both fail identically (as above); 6 both time out (`--in-out`,
+not compared); 3 differ, all on `test/mixed-binaries/mips64-test_raw_lui.elf`
+(`--section-headers`, `--program-headers`, `--symbols`), where upstream
+raises `Failure("int64_of_big_int")` on the `.text` address
+0x9000000040000000 (F5) and the branch prints it as readelf does. The
+upstream fixes change nothing else on the corpus.
+
+DWARF lanes (`--debug-dump=info`, `--debug-dump=dies`) on the 24 files with
+`.debug_info` (20 corpus files + 4 `-gdwarf-4` builds at -O0/-O2, an object
+and a shared library): 48 cases, 38 identical, 10 both fail with the same
+message (F7), 0 mismatches (after F8).
+
+Axioms: `#print axioms main_elf_run` gives `[propext, Classical.choice,
+Quot.sound]`; no `sorry` in `generated/` or `handwritten/`.
+
+## Performance observations (measured, not changed)
+
+Lean build: closed-term extraction off (lem-lean B9). Wall-clock, this
+machine, same inputs, identical output:
+
+| case | OCaml | Lean |
+|------|-------|------|
+| `--section-headers` python3.4m (4 MB) | 0.78 s | 0.37 s |
+| `--symbols` python3.4m | 0.86 s | 1.89 s |
+| `--symbols` libicui18n.so (9146 symbols) | 1.95 s | 5.10 s |
+| `--in-out` python3.4m | 775 s | 1.38 s |
+
+The `--in-out` gap is super-linear behaviour of the OCaml extraction of the
+same Lem code (cause not located). The Lean `--symbols` figure is after
+replacing `toList`-based string helpers in `handwritten/Ml_bindings.lean`
+(before: 124 s on libicui18n: string tables are sliced once per symbol).
+
+## Bugs in the port itself, caught by the differential
+
+- `Byte_sequence_wrapper.concat` (Lean twin) copied from the accumulator
+  instead of each window: every `--section-headers`/`--program-headers`/
+  `--symbols`/`--relocs`/`--in-out` run failed or diverged. Now pinned by
+  `handwritten/HandwrittenTest.lean` (plant-tested).
+- The list-based string helpers above (performance only).

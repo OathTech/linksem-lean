@@ -129,8 +129,12 @@ declare lean     target_rep function print_endline = `Ml_bindings.outln`
 let my_debug s = () (*print_endline s*)
 let my_debug2 s = () (*print_endline s*)
 let my_debug3 s = () (*print_endline s*)
-let my_debug4 s = print_endline s
-let my_debug5 s = print_endline s
+(* my_debug4/5 printed to STDOUT, so every --debug-dump=info/dies run
+   interleaved a duplicate "**Compilation Unit @ offset ..." header into the
+   readelf-style output (line ~2906). Debug traces go to stderr, like
+   Missing_pervasives.errln (linksem-lean findings F8). *)
+let my_debug4 s = Missing_pervasives.errln s
+let my_debug5 s = Missing_pervasives.errln s
 
 
 (** ************************************************************ *)

@@ -35,7 +35,9 @@ while IFS= read -r f; do
     # uncaught exception, Lean aborts with 134); reported as its own
     # category `bothfail` with each side's first stderr line, for review.
     ka=${ca%%:*}; kb=${cb%%:*}
-    if [ "$ka" = fail ] && [ "$kb" = fail ]; then same=bothfail
+    # Both timed out: nothing comparable (partial outputs); own category.
+    if [ "$ca" = timeout ] && [ "$cb" = timeout ]; then same=bothtimeout
+    elif [ "$ka" = fail ] && [ "$kb" = fail ]; then same=bothfail
     elif [ "$ca" = "$cb" ] && cmp -s "$OUT/a.out" "$OUT/b.out"; then same=yes
     else same=no; fi
     ea=$(head -c 160 "$OUT/a.out.err" | head -1 | tr '\t' ' ')
@@ -52,5 +54,6 @@ while IFS= read -r f; do
 done < "$LIST"
 rm -f "$OUT/a.out" "$OUT/b.out" "$OUT/a.out.err" "$OUT/b.out.err"
 bf=$(grep -c '^bothfail' "$OUT/summary.tsv" || true)
-echo "diff_main_elf: $n cases, $bad mismatches, $bf both-failed (summary: $OUT/summary.tsv)"
+bt=$(grep -c '^bothtimeout' "$OUT/summary.tsv" || true)
+echo "diff_main_elf: $n cases, $bad mismatches, $bf both-failed, $bt both-timed-out (summary: $OUT/summary.tsv)"
 [ $bad -eq 0 ]
