@@ -7,7 +7,8 @@
 #     its `errln` diagnostics, which the Lean side keeps since lem-lean B15).
 # Verdicts as in diff_main_link.sh: yes, no, panic (zero-panics hard
 # condition), bothfail / bothfail-msg (same / different failure message),
-# stderrorder (lem-lean A4), bothtimeout.
+# stderrorder (lem-lean A4), bothtimeout, bothresource (both exhausted the
+# memory cap DIFF_MEM / the stack / the time limit, in any combination).
 # Usage: diff_main_elf.sh A_BIN B_BIN CORPUS_LIST OUTDIR [FLAGS...]
 # The flag `@` runs the tools with the file only: the memory-image lane is
 #   diff_main_elf.sh ../src/dump_image.opt .lake/build/bin/dump_image LIST OUT @
@@ -20,12 +21,34 @@ set -uo pipefail
 A="$1"; B="$2"; LIST="$3"; OUT="$4"; shift 4
 FLAGS=("$@")
 [ ${#FLAGS[@]} -gt 0 ] || FLAGS=(--file-header --program-headers --section-headers --relocs --dynamic --symbols --in-out)
+# Every tool run gets its own cgroup memory cap through lem-lean's `capped`
+# wrapper (set CAPPED=/path/to/lem-lean/scripts/capped; DIFF_MEM, default 4G,
+# is its CERB_MEM_MAX): a runaway input is killed inside its cgroup, never the
+# session. Refuses to run uncapped unless DIFF_UNCAPPED=1 (loud opt-out).
+# (Not an address-space rlimit: that kills Lean spuriously, see `capped`.)
+DIFF_MEM="${DIFF_MEM:-4G}"
+if [ -n "${CAPPED:-}" ]; then
+  [ -x "$CAPPED" ] || { echo "$(basename "$0"): CAPPED=$CAPPED is not executable" >&2; exit 2; }
+  RUNCAP=(env CERB_MEM_MAX="$DIFF_MEM" "$CAPPED")
+elif [ "${DIFF_UNCAPPED:-}" = 1 ]; then
+  echo "$(basename "$0"): WARNING running tools WITHOUT a memory cap (DIFF_UNCAPPED=1)" >&2
+  RUNCAP=()
+else
+  echo "$(basename "$0"): set CAPPED=/path/to/lem-lean/scripts/capped (per-run memory cap), or DIFF_UNCAPPED=1" >&2
+  exit 2
+fi
 TIMEOUT="${DIFF_TIMEOUT:-120}"
 [ -x "$A" ] && [ -x "$B" ] || { echo "diff_main_elf: A or B not executable" >&2; exit 2; }
 [ -s "$LIST" ] || { echo "diff_main_elf: empty corpus list $LIST" >&2; exit 2; }
 mkdir -p "$OUT"
 : > "$OUT/summary.tsv"
 n=0; bad=0
+# A resource-limit failure (not an answer): the per-process memory cap
+# (DIFF_MEM) or the stack was exhausted, or the run timed out.
+resource_fail() { # class stderr
+  [ "$1" = timeout ] && return 0
+  grep -a -q -i -E 'out of memory|stack overflow|capped: OOM-KILLED|INTERNAL PANIC: integer overflow in runtime computation' "$2"
+}
 # The failure message of a failed run: OCaml's uncaught `Failure("msg")`,
 # Lean's `PANIC at <decl> <mod>:<line>:<col>: msg` (fail-stop / abort).
 # OCaml prints the message escaped (a newline as \n); Lean prints it raw,
@@ -47,9 +70,9 @@ bad_panic() { # lean_stderr ocaml_exit_kind
 run() { # bin file flag outfile -> prints exit class
   local st
   if [ "$3" = @ ]; then  # a tool taking the file only (dump_image)
-    LEAN_ABORT_ON_PANIC=1 timeout "$TIMEOUT" "$1" "$2" > "$4" 2> "$4.err"; st=$?
+    LEAN_ABORT_ON_PANIC=1 "${RUNCAP[@]}" timeout "$TIMEOUT" "$1" "$2" > "$4" 2> "$4.err"; st=$?
   else
-    LEAN_ABORT_ON_PANIC=1 timeout "$TIMEOUT" "$1" "$3" "$2" > "$4" 2> "$4.err"; st=$?
+    LEAN_ABORT_ON_PANIC=1 "${RUNCAP[@]}" timeout "$TIMEOUT" "$1" "$3" "$2" > "$4" 2> "$4.err"; st=$?
   fi
   if [ $st -eq 126 ] || [ $st -eq 127 ]; then
     echo "diff_main_elf: could not execute $1 (exit $st)" >&2; exit 2; fi
@@ -69,6 +92,7 @@ while IFS= read -r f; do
     # Both timed out: nothing comparable (partial outputs); own category.
     if bad_panic "$OUT/b.out.err" "$ka"; then same=panic
     elif [ "$ca" = timeout ] && [ "$cb" = timeout ]; then same=bothtimeout
+    elif [ "$ca" != ok ] && [ "$cb" != ok ] && resource_fail "$ca" "$OUT/a.out.err" && resource_fail "$cb" "$OUT/b.out.err"; then same=bothresource
     elif [ "$ka" = fail ] && [ "$kb" = fail ]; then
       ma=$(fail_msg "$OUT/a.out.err"); mb=$(fail_msg "$OUT/b.out.err")
       if [ -n "$ma" ] && [ "$ma" = "$mb" ]; then same=bothfail; else same=bothfail-msg; fi
@@ -95,5 +119,6 @@ bm=$(grep -c '^bothfail-msg' "$OUT/summary.tsv" || true)
 so=$(grep -c '^stderrorder' "$OUT/summary.tsv" || true)
 bt=$(grep -c '^bothtimeout' "$OUT/summary.tsv" || true)
 pn=$(grep -c '^panic' "$OUT/summary.tsv" || true)
-echo "diff_main_elf: $n cases, $bad mismatches ($pn with a Lean panic), $so stderr-order-only, $bf both-failed (same message), $bm both-failed (different messages), $bt both-timed-out (summary: $OUT/summary.tsv)"
+br=$(grep -c '^bothresource' "$OUT/summary.tsv" || true)
+echo "diff_main_elf: $n cases, $bad mismatches ($pn with a Lean panic), $so stderr-order-only, $bf both-failed (same message), $bm both-failed (different messages), $bt both-timed-out, $br both-hit-a-resource-limit (summary: $OUT/summary.tsv)"
 [ $bad -eq 0 ]

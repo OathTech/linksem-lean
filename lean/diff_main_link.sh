@@ -16,17 +16,40 @@
 # A3/A4); stderrorder (everything equal except the ORDER of stderr lines:
 # lem-lean A4, OCaml evaluates constructor arguments right to left, e.g.
 # Lem's count_map applies f from the last element; reviewed, not a
-# mismatch); bothtimeout. Each side runs in its own copy of the case (both
+# mismatch); bothtimeout; bothresource (both exhausted the memory cap
+# DIFF_MEM / the stack / the time limit, in any combination). Each side runs in its own copy of the case (both
 # write out.test-out next to the reference executable `out`).
 # Usage: diff_main_link.sh A_BIN B_BIN CASES_DIR OUTDIR
 # Exit 1 if any case differs; 2 on a usage or corpus error.
 set -uo pipefail
 A="$1"; B="$2"; CASES="$3"; OUT="$4"
+# Every tool run gets its own cgroup memory cap through lem-lean's `capped`
+# wrapper (set CAPPED=/path/to/lem-lean/scripts/capped; DIFF_MEM, default 4G,
+# is its CERB_MEM_MAX): a runaway input is killed inside its cgroup, never the
+# session. Refuses to run uncapped unless DIFF_UNCAPPED=1 (loud opt-out).
+# (Not an address-space rlimit: that kills Lean spuriously, see `capped`.)
+DIFF_MEM="${DIFF_MEM:-4G}"
+if [ -n "${CAPPED:-}" ]; then
+  [ -x "$CAPPED" ] || { echo "$(basename "$0"): CAPPED=$CAPPED is not executable" >&2; exit 2; }
+  RUNCAP=(env CERB_MEM_MAX="$DIFF_MEM" "$CAPPED")
+elif [ "${DIFF_UNCAPPED:-}" = 1 ]; then
+  echo "$(basename "$0"): WARNING running tools WITHOUT a memory cap (DIFF_UNCAPPED=1)" >&2
+  RUNCAP=()
+else
+  echo "$(basename "$0"): set CAPPED=/path/to/lem-lean/scripts/capped (per-run memory cap), or DIFF_UNCAPPED=1" >&2
+  exit 2
+fi
 TIMEOUT="${DIFF_TIMEOUT:-600}"
 [ -x "$A" ] && [ -x "$B" ] || { echo "diff_main_link: A or B not executable" >&2; exit 2; }
 A=$(realpath "$A"); B=$(realpath "$B")   # the runs cd into each case
 mkdir -p "$OUT"; : > "$OUT/summary.tsv"
 n=0; bad=0
+# A resource-limit failure (not an answer): the per-process memory cap
+# (DIFF_MEM) or the stack was exhausted, or the run timed out.
+resource_fail() { # class stderr
+  [ "$1" = timeout ] && return 0
+  grep -a -q -i -E 'out of memory|stack overflow|capped: OOM-KILLED|INTERNAL PANIC: integer overflow in runtime computation' "$2"
+}
 # The failure message of a failed run: OCaml's uncaught `Failure("msg")`,
 # Lean's `PANIC at <decl> <mod>:<line>:<col>: msg` (fail-stop / abort).
 # OCaml prints the message escaped (a newline as \n); Lean prints it raw,
@@ -48,7 +71,7 @@ bad_panic() { # lean_stderr ocaml_exit_kind
 run() { # bin workdir -> prints exit class
   local st args
   mapfile -t args < "$2/inputs"
-  (cd "$2" && LEAN_ABORT_ON_PANIC=1 timeout "$TIMEOUT" "$1" -o out "${args[@]}" > stdout 2> stderr); st=$?
+  (cd "$2" && LEAN_ABORT_ON_PANIC=1 "${RUNCAP[@]}" timeout "$TIMEOUT" "$1" -o out "${args[@]}" > stdout 2> stderr); st=$?
   if [ $st -eq 126 ] || [ $st -eq 127 ]; then
     echo "diff_main_link: could not execute $1 (exit $st)" >&2; exit 2; fi
   if [ $st -eq 0 ]; then echo ok; elif [ $st -eq 124 ]; then echo timeout; else echo "fail:$st"; fi
@@ -69,6 +92,7 @@ for c in "$CASES"/*/; do
   ka=${ca%%:*}; kb=${cb%%:*}
   if bad_panic "$b/stderr" "$ka"; then v=panic
   elif [ "$ca" = timeout ] && [ "$cb" = timeout ]; then v=bothtimeout
+  elif [ "$ca" != ok ] && [ "$cb" != ok ] && resource_fail "$ca" "$a/stderr" && resource_fail "$cb" "$b/stderr"; then v=bothresource
   elif [ "$ka" = fail ] && [ "$kb" = fail ]; then
     ma=$(fail_msg "$a/stderr"); mb=$(fail_msg "$b/stderr")
     if [ -n "$ma" ] && [ "$ma" = "$mb" ]; then v=bothfail; else v=bothfail-msg; fi
@@ -93,6 +117,7 @@ bm=$(grep -c '^bothfail-msg' "$OUT/summary.tsv" || true)
 so=$(grep -c '^stderrorder' "$OUT/summary.tsv" || true)
 bt=$(grep -c '^bothtimeout' "$OUT/summary.tsv" || true)
 pn=$(grep -c '^panic' "$OUT/summary.tsv" || true)
+br=$(grep -c '^bothresource' "$OUT/summary.tsv" || true)
 wr=$(awk -F'\t' '($1=="yes" || $1=="stderrorder") && $5=="written"' "$OUT/summary.tsv" | wc -l)
-echo "diff_main_link: $n cases, $bad mismatches ($pn with a Lean panic), $wr identical linked outputs, $so stderr-order-only, $bf both-failed (same message), $bm both-failed (different messages), $bt both-timed-out (summary: $OUT/summary.tsv)"
+echo "diff_main_link: $n cases, $bad mismatches ($pn with a Lean panic), $wr identical linked outputs, $so stderr-order-only, $bf both-failed (same message), $bm both-failed (different messages), $bt both-timed-out, $br both-hit-a-resource-limit (summary: $OUT/summary.tsv)"
 [ $bad -eq 0 ]

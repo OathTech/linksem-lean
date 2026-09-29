@@ -56,6 +56,10 @@ Two unterminated `match`es in `find_byte`; `-isa`, `-coq`, `-hol` and `-lean`
 all failed on the file ("Syntax error", line 40), so the prover extractions
 cannot have been run for some time. Fixed in the first commit on the branch.
 
+Update 2026-09-29 (upstream tray, report 08): the generic `find_byte` also
+never compared bytes at all, lacked `let rec`, mis-parenthesised `Just n +
+1` and missed `open import Maybe`; all fixed on `upstream-pr/generic-find-byte`.
+
 ## F5. Hex printing raises on values ≥ 2^63 (confirmed, fixed)
 
 The `hex_string_of_big_int_pad*` family formatted through
@@ -92,6 +96,10 @@ the same message):
   (`parse_location_list: Parse fail`).
 - One `parse_die returned Nothing` (a large SBCL object).
 Missing features rather than wrong behaviour; recorded, not fixed.
+
+Update 2026-09-29 (upstream tray, report 14): the location-list failure is
+caused by GCC's location views (`DW_LLE_view_pair`); the same program built
+with `-gno-variable-location-views` dumps fine.
 
 ## F8. Debug trace on stdout in `--debug-dump` (confirmed, fixed)
 
@@ -200,6 +208,50 @@ upstream linker. Fix (elf64_file_of_elf_memory_image.lem): stable
 partition, locals first, `sh_info` set. `exec_check.sh` now reports any
 readelf warning on a linked output as a finding.
 
+### F15. amd64 linker: `R_X86_64_(REX_)GOTPCRELX` rejected, `R_X86_64_PC64` unimplemented (confirmed, fixed)
+
+`amd64_reloc` (abis/abis.lem) failed with `unrecognised relocation Invalid
+X86_64 relocation` on relocation types 41/42 (x86-64 psABI 1.0, 2015),
+which modern assemblers emit for every `sym@GOTPCREL(%rip)` load, so most
+modern objects with a GOT load could not be linked (the same message is
+behind the 11 both-fail files of the memory-image lane, via `main_elf`'s
+relocation names); `R_X86_64_PC64` was a `FIXME` failure. Fix: the two
+types named (abi_amd64_relocation.lem), added to the GOT-slot set and
+computed as `R_X86_64_GOTPCREL` (relaxation is optional in the psABI);
+`PC64` = `S + A - P`, 64-bit. Link-corpus case `asm_relocs` (32, 32S, 64,
+PC32, PC64, REX_GOTPCRELX): exit status 82 as with ld.
+
+### F16. Static glibc programs cannot be linked (capability gap, not fixed)
+
+`main_link` on a static glibc "hello" (crt1.o crti.o crtbeginT.o h.o
+--start-group libgcc.a libgcc_eh.a libc.a --end-group crtend.o crtn.o)
+elaborates 2487 input objects (26 s, OCaml) and fails with `matching
+definition for GOT entry named _nl_current_LC_TIME_used has no range`: an
+SHN_ABS symbol reached through the GOT, which the GOT construction assumes
+has a location. Beyond it, relocations static glibc needs are unimplemented
+(`R_X86_64_IRELATIVE` for IFUNCs, `R_X86_64_TPOFF32` for TLS). Recorded as
+the linker's current limit; the link corpus stays freestanding.
+
+### F17. Host allocation limits reported as `int_of_big_int` / `Bytes.create` (fixed, OCaml)
+
+Found by the fuzz lane: a corrupted `sh_offset` near 2^62 makes
+`bytes_of_elf64_file` (reached from `main_elf` through the section-name
+lookup) pad the file image up to it, i.e. ask for a ~2^62-byte sequence.
+`big_num_make` / `big_num_zero_pad_to_length` then failed in the int
+conversion (`Failure "int_of_big_int"`) or in `Bytes.create`. The logical
+result cannot be allocated on any host, so this is a resource limit, now
+reported as such (`Out_of_memory`) when the length exceeds
+`Sys.max_string_length`; the Lean runtime refuses the same allocation
+(`INTERNAL PANIC: integer overflow in runtime computation`). The runners
+classify both as `bothresource`.
+
+### F18. `Filesystem_wrapper.is_abs_path ""` raises (latent, not fixed)
+
+Found by the twin lane: `is_abs_path` and `to_absolute` index the first
+character of the path, so an empty path raises `Invalid_argument "index out
+of bounds"`. The Lean twin fails the same way. No caller is known to pass an
+empty path (`ldconfig`/`main_load` paths); recorded, not changed.
+
 ### New lanes (2026-09-29)
 
 [USER 2026-09-29] approved three additions: a Lean `main_link` driver with a
@@ -219,6 +271,24 @@ condition.
   annotated memory image of each file (elements with checksums, `by_range`
   annotations in set order, so every range-tag comparison A1 fixed is
   exercised) and the serialisation round trip of `copy_elf`.
+- **Fuzz** (`fuzz/run_fuzz.sh`, `fuzz/mutate.py`): deterministic mutants
+  (seed, file, index) of the corpus files up to 200 KB: ELF/section/program
+  header fields set to boundary values (0, all ones, 2^31, 2^32, 2^62, 2^63,
+  file size +- 1), byte flips, truncation; run through `diff_main_elf.sh`
+  for six `main_elf` flags and `dump_image`, sharded, from a snapshot of the
+  tools. Found F17.
+- **Twins** (`twins/run.sh`, `gen_cases.py`, `twin_probe.ml`,
+  `TwinProbe.lean`): the hand-written Lean twins against the OCaml helpers
+  they mirror (uint32/uint64, byte sequences, ml_bindings string/number
+  functions, path functions), on seeded cases inside each function's domain;
+  a case OCaml raises on must make the Lean twin fail too (one process per
+  case). Seed 1 (29,000 cases): 0 differences; 141 raising cases all fail on
+  the Lean side (the replacement-template errors of F12 and F18). Against
+  the UPSTREAM helpers the same cases differ exactly where the F1, F2, F5,
+  F6, F10 and F11 fixes apply. Found F18.
+- **Memory caps**: every tool run goes through lem-lean's `capped` (a
+  cgroup per run, 4G): an uncapped Lean run on a fuzz mutant exhausted the
+  machine's memory once (2026-09-29).
 - **Runner verdicts** (both runners): stderr is compared when both sides
   exit 0; a Lean panic is a hard failure unless it is the rendering of a
   failure OCaml also raises (`panic`); both-fail cases compare the failure

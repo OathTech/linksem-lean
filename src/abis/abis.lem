@@ -407,7 +407,7 @@ end
 let amd64_reloc_needs_got_slot =  fun symref -> fun rr -> fun maybe_def ->
     let (rel_type, _) = parse_elf64_relocation_info rr.ref_relent.elf64_ra_info in
     if (rel_type IN {
-        r_x86_64_got32; r_x86_64_gotpcrel; r_x86_64_gottpoff; r_x86_64_gotoff64; r_x86_64_gotpc32 (* ; r_x86_64_gotpc32_tlsdesc *)
+        r_x86_64_got32; r_x86_64_gotpcrel; r_x86_64_gotpcrelx; r_x86_64_rex_gotpcrelx; r_x86_64_gottpoff; r_x86_64_gotoff64; r_x86_64_gotpc32 (* ; r_x86_64_gotpc32_tlsdesc *)
     }) then
        true
     else if is_ifunc_def maybe_def
@@ -1264,6 +1264,9 @@ let amd64_reloc r =
     | "R_X86_64_JUMP_SLOT" ->       (false, fun img -> (fun site_addr -> (fun rr -> (8, fun s -> fun a -> fun e -> s))))
     | "R_X86_64_RELATIVE" ->        (true,  fun img -> (fun site_addr -> (fun rr -> (8, fun s -> fun a -> fun e -> i2n (n2i (amd64_base_addr rr site_addr) + a)))))
     | "R_X86_64_GOTPCREL" ->        (false, fun img -> (fun site_addr -> (fun rr -> (4, fun s -> fun a -> fun e -> i2n_signed 32 ((n2i (amd64_got_slot_addr img rr)) + a - (n2i site_addr)) ))) )
+    (* not relaxed: computed as R_X86_64_GOTPCREL (psABI: relaxation is optional) *)
+    | "R_X86_64_GOTPCRELX" ->       (false, fun img -> (fun site_addr -> (fun rr -> (4, fun s -> fun a -> fun e -> i2n_signed 32 ((n2i (amd64_got_slot_addr img rr)) + a - (n2i site_addr)) ))) )
+    | "R_X86_64_REX_GOTPCRELX" ->   (false, fun img -> (fun site_addr -> (fun rr -> (4, fun s -> fun a -> fun e -> i2n_signed 32 ((n2i (amd64_got_slot_addr img rr)) + a - (n2i site_addr)) ))) )
     | "R_X86_64_32" ->              (true,  fun img -> (fun site_addr -> (fun rr -> (4, fun s -> fun a -> fun e -> i2n (n2i s + a)))))
     | "R_X86_64_32S" ->             (true,  fun img -> (fun site_addr -> (fun rr -> (4, fun s -> fun a -> fun e -> i2n_signed 32 ((n2i s) + a)))))
     | "R_X86_64_16" ->              (true,  fun img -> (fun site_addr -> (fun rr -> (2, fun s -> fun a -> fun e -> failwith "amd64_reloc: unimplemented R_X86_64_16" (* FIXME *)))))
@@ -1278,7 +1281,7 @@ let amd64_reloc r =
     | "R_X86_64_DTPOFF32" ->        (false, fun img -> (fun site_addr -> (fun rr -> (4, fun s -> fun a -> fun e -> failwith "amd64_reloc: unimplemented R_X86_64_DTPOFF32" (* FIXME *)))))
     | "R_X86_64_GOTTPOFF" ->        (false, fun img -> (fun site_addr -> (fun rr -> (4, fun s -> fun a -> fun e -> i2n_signed 32 ((n2i (amd64_got_slot_addr img rr)) + a - (n2i site_addr))))))
     | "R_X86_64_TPOFF32" ->         (false, fun img -> (fun site_addr -> (fun rr -> (4, fun s -> fun a -> fun e -> failwith "amd64_reloc: unimplemented R_X86_64_TPOFF32" (* FIXME *)))))
-    | "R_X86_64_PC64" ->            (false, fun img -> (fun site_addr -> (fun rr -> (8, fun s -> fun a -> fun e -> failwith "amd64_reloc: unimplemented R_X86_64_PC64" (* FIXME *)))))
+    | "R_X86_64_PC64" ->            (false, fun img -> (fun site_addr -> (fun rr -> (8, fun s -> fun a -> fun e -> i2n_signed 64 (((n2i s) + a) - (n2i site_addr))))))
     | "R_X86_64_GOTOFF64" ->        (false, fun img -> (fun site_addr -> (fun rr -> (8, fun s -> fun a -> fun e -> failwith "amd64_reloc: unimplemented R_X86_64_GOTOFF64" (* FIXME *)))))
     | "R_X86_64_GOTPC32" ->         (false, fun img -> (fun site_addr -> (fun rr -> (4, fun s -> fun a -> fun e -> failwith "amd64_reloc: unimplemented R_X86_64_GOTPC32" (* FIXME *)))))
     | "R_X86_64_SIZE32" ->          (false, fun img -> (fun site_addr -> (fun rr -> (4, fun s -> fun a -> fun e -> failwith "amd64_reloc: unimplemented R_X86_64_SIZE32" (* FIXME *)))))

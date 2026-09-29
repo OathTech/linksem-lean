@@ -57,6 +57,11 @@ let r_x86_64_gotpc32_tlsdesc : natural = 34
 let r_x86_64_tlsdesc_call : natural = 35
 let r_x86_64_tlsdesc : natural = 36
 let r_x86_64_irelative : natural = 37
+(* x86-64 psABI 1.0 (2015): GOT-indirect loads the linker MAY relax to a
+ * direct form; computed as R_X86_64_GOTPCREL when not relaxed. Modern
+ * assemblers emit them for every `sym@GOTPCREL(%rip)` load. *)
+let r_x86_64_gotpcrelx : natural = 41
+let r_x86_64_rex_gotpcrelx : natural = 42
 
 (** [string_of_x86_64_relocation_type m] produces a string representation of the
   * relocation type [m].
@@ -129,6 +134,10 @@ let string_of_amd64_relocation_type rel_type =
     "R_X86_64_TLSDESC"
   else if rel_type = r_x86_64_irelative then
     "R_X86_64_IRELATIVE"
+  else if rel_type = r_x86_64_gotpcrelx then
+    "R_X86_64_GOTPCRELX"
+  else if rel_type = r_x86_64_rex_gotpcrelx then
+    "R_X86_64_REX_GOTPCRELX"
   else
     "Invalid X86_64 relocation"
 

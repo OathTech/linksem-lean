@@ -24,6 +24,8 @@ performance). Backend bugs found by this port are recorded in lem-lean's
 | `driver/DumpImage.lean` | the Lean `dump_image`: the I/O around `Dump_image.dump_image` (`src/dump_image.lem`, a test driver) |
 | `lakefile.lean` | LemLib pinned by commit (bump it together with the `lem` you generate with); the generated-module list is rewritten by `gen-roots.sh` |
 | `diff_main_elf.sh` | differential runner (corpus x flags; stdout, stderr, exit class); flag `@` for tools taking the file only (`dump_image`) |
+| `fuzz/`, `twins/` | fuzz lane (mutated ELF files) and twin lane (Lean twins vs OCaml helpers) |
+| `docs/upstream-tray/` | upstream report drafts (README, INDEX, one report per finding) |
 | `diff_main_link.sh`, `link-corpus/` | linker differential: `link-corpus/build_cases.sh` compiles freestanding x86-64 programs (`cases.txt`) and links them with `ld` as the reference `out`; the runner compares both `main_link` builds' `out.test-out`, stdout, stderr, exit class |
 
 ## Build
@@ -66,6 +68,12 @@ the URL in `lakefile.lean` to a local checkout, e.g.
 on LemLib's fail-stop (`lemFailStop`), so a reached model failure stops them
 as the OCaml exception does (the runners also set `LEAN_ABORT_ON_PANIC=1`).
 
+Every runner caps each tool run in its own cgroup through lem-lean's
+`scripts/capped` (a runaway input must not take the machine down) and
+refuses to start without it:
+
+    export CAPPED=/path/to/lem-lean/scripts/capped    # DIFF_MEM=4G per run by default
+
 Memory-image lane (the same runner, tools taking the file only):
 
     ./diff_main_elf.sh ../src/dump_image.opt .lake/build/bin/dump_image corpus.txt out/ @
@@ -81,9 +89,25 @@ exit statuses; a readelf warning on linksem's output is also a finding:
 
     link-corpus/exec_check.sh ../src/main_link.opt /tmp/link-cases exec-out/
 
+Fuzz lane (deterministic mutants of the corpus files up to 200 KB; seed,
+mutants per file):
+
+    fuzz/run_fuzz.sh corpus.txt fuzz-out/ 1 20
+
+Twin lane (the hand-written Lean twins against the OCaml helpers; seed,
+rounds; `OCAML_SRC=...` compares against another checkout's helpers):
+
+    lake build twin_probe && twins/run.sh twins-out/ 1 500
+
 Verdicts: `yes`; `no` (mismatch); `panic` (hard condition: a Lean panic
 that is not the rendering of a failure OCaml also raises); `bothfail` (both
 fail with the same message); `bothfail-msg` (both fail, different messages:
 review); `stderrorder` (identical except the order of stderr lines: OCaml
 evaluates constructor arguments right to left, lem-lean audit A4; review);
-`bothtimeout`. A runner exits 1 on any `no` or `panic`.
+`bothtimeout`; `bothresource` (both exhausted the memory cap, the stack,
+the host's allocation limit or the time limit). A runner exits 1 on any
+`no` or `panic`.
+
+Upstream reports: [`docs/upstream-tray/INDEX.md`](docs/upstream-tray/INDEX.md)
+(drafts; each fix also on a branch `upstream-pr/<name>` based on upstream
+`master`).

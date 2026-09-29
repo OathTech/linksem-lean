@@ -159,3 +159,10 @@ lean_exe main_link where
 lean_exe dump_image where
   srcDir := "driver"
   root := `DumpImage
+
+/-- The twin differential's Lean side: the hand-written twins evaluated on
+    twins/gen_cases.py cases (twins/run.sh compares with the OCaml helpers). -/
+@[default_target]
+lean_exe twin_probe where
+  srcDir := "twins"
+  root := `TwinProbe
