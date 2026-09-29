@@ -4,16 +4,28 @@ open Error
 open Printf
 open Unix
 
+(* POSIX timestamp -> "%i-%i-%iT%02i:%02i:%02i" (UTC, proleptic Gregorian).
+   Exact big-number calendar arithmetic (civil-from-days, H. Hinnant); the
+   previous version went through Int64 -> float -> Unix.gmtime, which rounded
+   above 2^53 and raised (Unix_error EINVAL / Failure int64_of_big_int) for
+   large values. Identical output wherever gmtime was exact. Timestamps are
+   naturals: all intermediate values are non-negative. *)
 let string_of_unix_time (tm : Nat_big_num.num) =
-  let num  = Nat_big_num.to_int64 tm in
-  let tm   = Unix.gmtime (Int64.to_float num) in
-  let day  = tm.tm_mday in
-  let mon  = 1 + tm.tm_mon in
-  let year = 1900 + tm.tm_year in
-  let hour = tm.tm_hour in
-  let min  = tm.tm_min in
-  let sec  = tm.tm_sec in
-    Printf.sprintf "%i-%i-%iT%02i:%02i:%02i" year mon day hour min sec
+  let open Nat_big_num in
+  let n = of_int in
+  let days = div tm (n 86400) and secs = to_int (modulus tm (n 86400)) in
+  let z = add days (n 719468) in
+  let era = div z (n 146097) in
+  let doe = sub z (mul era (n 146097)) in
+  let yoe = div (sub (add (sub doe (div doe (n 1460))) (div doe (n 36524))) (div doe (n 146096))) (n 365) in
+  let y = add yoe (mul era (n 400)) in
+  let doy = sub doe (sub (add (mul (n 365) yoe) (div yoe (n 4))) (div yoe (n 100))) in
+  let mp = div (add (mul (n 5) doy) (n 2)) (n 153) in
+  let d = add (sub doy (div (add (mul (n 153) mp) (n 2)) (n 5))) (n 1) in
+  let m = if less mp (n 10) then add mp (n 3) else sub mp (n 9) in
+  let y = if less_equal m (n 2) then add y (n 1) else y in
+  Printf.sprintf "%s-%s-%sT%02i:%02i:%02i" (to_string y) (to_string m) (to_string d)
+    (secs / 3600) (secs mod 3600 / 60) (secs mod 60)
 
 let hex_string_of_nat_pad2 i : string =
   Printf.sprintf "%02i" i
