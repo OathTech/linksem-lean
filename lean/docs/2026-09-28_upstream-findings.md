@@ -167,6 +167,39 @@ twin now mirrors the probed semantics (`#guard`s). Only `ldconfig`
 - Known limitation: file names that are not valid UTF-8 cannot be opened
   (Lean's file API takes a UTF-8 `String`); loud failure.
 
+### F13. Linker symbol resolution: statics, COMMON and weak symbols (confirmed, fixed)
+
+Found by running the linker lane's outputs (`link-corpus/exec_check.sh`:
+each case program exits with a computed status; ld's executable and
+linksem's are both run). `resolve_one_reference_default`
+(linkable_list.lem) had two errors:
+- the candidate definitions for a reference include every `SymbolDef`,
+  LOCAL ones too: `extern int counter;` was bound to ANOTHER file's `static
+  int counter` whenever that file came first (`c_static_first`: exit 55
+  where ld's program exits 95) -- a silent miscompilation;
+- a reference through a symbol the referencing object DEFINES (a weak
+  definition, a COMMON symbol) was bound only to that symbol itself, never
+  unified with the other objects' definitions: COMMON symbols were not
+  merged (two `shared_counter`s: exit 7 vs 9) and a weak definition beat
+  the strong one in either link order (exit 1 vs 40).
+Fix: only a LOCAL symbol resolves to itself, and a local definition is
+never a candidate for another symbol; a global/weak/COMMON symbol an object
+defines competes with the other objects' definitions; ties rank strong over
+COMMON over weak (the largest COMMON among COMMONs), then the existing
+command-line / left-to-right order. Archive members are not searched to
+override a weak or COMMON definition (conservative). Remaining difference
+from ld: two strong definitions of one name are not an error (the first
+wins), and an unchosen COMMON symbol is still allocated (unused space).
+
+### F14. Output symbol table: locals not first, `sh_info = 0` (confirmed, fixed)
+
+The linked executable's `.symtab` interleaved LOCAL and GLOBAL symbols and
+its header's `sh_info` was 0 (ELF: all locals first, `sh_info` = index of
+the first non-local); `readelf -a` warns on every linked output of the
+upstream linker. Fix (elf64_file_of_elf_memory_image.lem): stable
+partition, locals first, `sh_info` set. `exec_check.sh` now reports any
+readelf warning on a linked output as a finding.
+
 ### New lanes (2026-09-29)
 
 [USER 2026-09-29] approved three additions: a Lean `main_link` driver with a
@@ -206,6 +239,11 @@ condition.
   round trip; 6 ELF32 files are rejected identically by the ELF64 reader),
   11 both fail with the same message (unrecognised relocation), 0
   mismatches.
+- Linker execution oracle (after F13/F14), 20 cases: 19 linked executables
+  exit with the same status as ld's, readelf-clean; 1 case (TLS) is a
+  test-program defect (ld's own executable faults: no TLS runtime) and
+  linksem fails on its relocation (below). The upstream linker: 0 of 19
+  readelf-clean, 6 with a wrong exit status.
 - Linker, 13 cases: 12 linked outputs byte-identical (with identical stdout;
   9 of them with stderr differing only in the order of the model's
   "Considering relocatable file" lines, lem-lean A4: OCaml's `count_map`

@@ -11,6 +11,13 @@ c_multi_secs   | -O1 -ffunction-sections -fdata-sections | c_main.c c_lib.c
 c_multi_pie    | -O0 -fpie | c_main.c c_lib.c
 c_archive      | -O0 | c_arch_main.c libx.a(c_arch_used.c c_arch_unused.c)
 c_common       | -O0 -fcommon | c_common_a.c c_common_b.c
+c_common_only  | -O0 -fcommon | c_comm_a.c c_comm_b.c
+c_common_rev   | -O0 -fcommon | c_comm_b.c c_comm_a.c
+c_weak_strong  | -O0 | c_weak_a.c c_weak_b.c
+c_strong_weak  | -O0 | c_weak_b.c c_weak_a.c
+c_weak_alone   | -O0 | c_weak_a.c
+c_static_first | -O0 | c_static_a.c c_static_b.c c_static_c.c
+c_static_last  | -O0 | c_static_b.c c_static_c.c c_static_a.c
 c_tls          | -O0 -ftls-model=local-exec | c_tls.c
 c_strings_O0   | -O0 | c_strings.c
 c_strings_O2   | -O2 | c_strings.c

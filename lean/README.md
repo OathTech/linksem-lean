@@ -75,6 +75,12 @@ Linker lane (needs gcc, as, ld, ar for x86-64):
     link-corpus/build_cases.sh /tmp/link-cases
     ./diff_main_link.sh ../src/main_link.opt .lake/build/bin/main_link /tmp/link-cases out/
 
+Linker execution oracle (linksem's own correctness, independent of the
+port): link every case, run ld's executable and linksem's, compare their
+exit statuses; a readelf warning on linksem's output is also a finding:
+
+    link-corpus/exec_check.sh ../src/main_link.opt /tmp/link-cases exec-out/
+
 Verdicts: `yes`; `no` (mismatch); `panic` (hard condition: a Lean panic
 that is not the rendering of a failure OCaml also raises); `bothfail` (both
 fail with the same message); `bothfail-msg` (both fail, different messages:
