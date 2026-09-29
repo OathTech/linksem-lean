@@ -25,18 +25,27 @@ performance). Backend bugs found by this port are recorded in lem-lean's
 
 ## Build
 
-Prerequisites: the lem-lean fork's `lem` at the commit pinned for LemLib in
-`lakefile.lean` (build it in its checkout with `make`; the fork's
-`doc/lean-backend/README.md` has the quickstart), the OCaml dependencies of
-linksem (`opam`: `ocamlfind`, `zarith`, `num`, and lem's OCaml library from
-the same checkout), and elan with the toolchain in `lean-toolchain`
-(Lean 4.32.2).
+Prerequisites: an OCaml toolchain with `ocamlfind`, `zarith` and `num`
+(opam), elan with the toolchain in `lean-toolchain` (Lean 4.32.2), and the
+lem-lean fork checked out at the commit pinned for LemLib in `lakefile.lean`.
+Build `lem` and make its OCaml library visible to findlib (linksem's
+`src/lem.mk` checks for it, also for the Lean extraction):
 
-    # OCaml reference build (from linksem's src/)
+    cd /path/to/lem-lean && git checkout <commit pinned in lean/lakefile.lean> && make
+    make -C ocaml-lib INSTALLDIR=/path/to/findlib-dir install
+    export OCAMLPATH=/path/to/findlib-dir     # or: opam pin the fork's lem
+
+Then, from the root of this repository:
+
+    # OCaml reference build
     make -C src LEM=/path/to/lem-lean/lem
     # Lean: generate, then build (whole model, checks, main_elf)
     make -C src -f lem.mk LEM=/path/to/lem-lean/lem lean-extraction
     cd lean && lake build
+
+Generation rewrites the module list in `lakefile.lean` (byte order, so it is
+the same for everyone); a clean checkout stays clean unless the Lem module
+set changed.
 
 The generated code must be built against the LemLib of the same lem-lean
 commit as the `lem` that generated it. For unpushed lem-lean work, redirect

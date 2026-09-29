@@ -4,7 +4,9 @@
 # or a malformed name is an error.
 set -euo pipefail
 cd "$(dirname "$0")"
-mods=$(cd generated && ls *.lean | grep -v -e '_auxiliary\.lean$' -e '_lemMeasureProofs\.lean$' | sed 's/\.lean$//')
+# Byte order (LC_ALL=C), not the caller's locale: the list is committed, so
+# its order must not depend on who regenerates it.
+mods=$(cd generated && ls *.lean | grep -v -e '_auxiliary\.lean$' -e '_lemMeasureProofs\.lean$' | sed 's/\.lean$//' | LC_ALL=C sort)
 [ -n "$mods" ] || { echo "gen-roots: no generated modules" >&2; exit 1; }
 grep -q -- '-- BEGIN generated module list' lakefile.lean && grep -q -- '-- END generated module list' lakefile.lean \
   || { echo "gen-roots: markers missing from lakefile.lean" >&2; exit 1; }
