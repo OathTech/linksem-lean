@@ -2,7 +2,7 @@
 default: lem_ocaml_sentinel
 default: build_zarith/linksem.cma build_zarith/linksem.cmxa
 default: build_num/linksem.cma build_num/linksem.cmxa
-default: main_elf main_elf.opt main_link main_link.opt copy_elf copy_elf.opt
+default: main_elf main_elf.opt main_link main_link.opt copy_elf copy_elf.opt dump_image.opt
 
 include lem.mk
 
@@ -99,8 +99,8 @@ copy_elf main_elf main_link scratch: %: %.ml $(ALL_UTIL_ML_WO_LEM) lem_ocaml_sen
 	"$<" \
 	-linkpkg
 
-copy_elf.opt main_elf.opt main_link.opt: OCAMLFIND_PACKAGES += -package unix -package str
-copy_elf.opt main_elf.opt main_link.opt scratch.opt: %.opt: %.ml $(ALL_UTIL_ML_WO_LEM) lem_ocaml_sentinel
+copy_elf.opt main_elf.opt main_link.opt dump_image.opt: OCAMLFIND_PACKAGES += -package unix -package str
+copy_elf.opt main_elf.opt main_link.opt dump_image.opt scratch.opt: %.opt: %.ml $(ALL_UTIL_ML_WO_LEM) lem_ocaml_sentinel
 	ocamlfind ocamlopt $(OCAMLFLAGS) -o "$@" -g \
 	$(OCAMLFIND_PACKAGES) \
 	$(ALL_UTIL_ML) \
@@ -113,7 +113,7 @@ copy_elf.opt main_elf.opt main_link.opt scratch.opt: %.opt: %.ml $(ALL_UTIL_ML_W
 .PHONY: clean
 clean: lem-clean
 	rm -rf build_zarith build_num
-	rm -f main_elf main_link main_elf.opt main_link.opt copy_elf copy_elf.opt
+	rm -f main_elf main_link main_elf.opt main_link.opt copy_elf copy_elf.opt dump_image.opt
 	rm -rf *~
 	rm -f *.cmi *.cmo *.cmx *.cmt *.o
 	rm -f abis/*.cmi abis/*.cmo abis/*.cmx abis/*.cmt abis/*.o

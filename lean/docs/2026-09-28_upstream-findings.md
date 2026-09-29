@@ -118,6 +118,104 @@ flaws are fixed, per the charter; AGENT design]: `Uint32_wrapper.uchar_*`
 (modulo 256) on both sides for construction, `plus`, `lshift` and the word
 conversion (`land`/`lor`/`rshift` cannot leave [0, 256)).
 
+## Audit of the Lean port (2026-09-29)
+
+[USER 2026-09-29] asked for independent auditors; five ran (hand-written
+twins, target-rep mappings, translation-level semantics, adversarial fuzzing
+of ~23,000 cases, coverage of the modules `main_elf` does not reach). Every
+reported discrepancy was reproduced before acting. Backend-side results are
+in lem-lean's record (audit A1-A4); linksem-side:
+
+### F10. Lengths >= 2^62 raised in OCaml (confirmed, fixed)
+
+`big_num_dropbytes`/`big_num_takebytes` converted the length with
+`Nat_big_num.to_int`, which raises `Failure "int_of_big_int"` from 2^62 (the
+fuzzer found the boundary exactly: 2^62 - 1 agrees). Any ELF64 offset or
+size field >= 2^62 crashed OCaml (`e_shoff`, `sh_offset`, `sh_size`,
+`p_offset`, `p_filesz`), where the logical result, and Lean's, is the
+model's own `dropbytes`/`takebytes` failure. Fix: compare as big numbers
+first (the lem-lean ruling [USER 2026-09-03]: OCaml's hard-coded int limits
+are deviations; the logical semantics is the reference).
+
+### F11. `string_of_unix_time` rounded / raised for large timestamps (confirmed, fixed)
+
+Int64 -> float -> `Unix.gmtime`: DT_GNU_PRELINKED values above 2^53 printed
+the wrong second, and from ~6.8e16 raised `Unix_error(EINVAL, "gmtime")`
+(2^63: `Failure "int64_of_big_int"`). Fix: exact big-number civil-from-days
+arithmetic, the Lean twin's algorithm; on 210 timestamps (epoch, leap days,
+century boundaries, 9999-12-31, 200 random) upstream `gmtime`, the new OCaml
+and Lean agree byte for byte.
+
+### F12. `string_replace`: Lean twin ignored the replacement template (fixed, Lean side)
+
+OCaml's `Str.global_replace` interprets its replacement (`\\` backslash,
+`\0` the match, `\1`-`\9` and a trailing `\` raise, other `\c` kept), and
+only when a match occurs. The Lean twin inserted the text literally. The
+twin now mirrors the probed semantics (`#guard`s). Only `ldconfig`
+(`$ORIGIN` substitution) uses it.
+
+### Lean driver (`driver/MainElf.lean`)
+
+- Output is written as raw bytes (one per character), as OCaml's
+  `print_string` does; `IO.println` had UTF-8-encoded every byte >= 0x80 in
+  names (symbol/section/library/DWARF strings; reached by any UTF-8
+  identifier from gcc). A character >= 256 fails loudly (none can occur:
+  linksem has no non-ASCII literals).
+- `lemFailStop` (lem-lean A2) makes a reached failure stop the program (exit
+  1; OCaml exits 2 on the uncaught exception); it used to continue with a
+  default value unless `LEAN_ABORT_ON_PANIC=1` was set.
+- Known limitation: file names that are not valid UTF-8 cannot be opened
+  (Lean's file API takes a UTF-8 `String`); loud failure.
+
+### New lanes (2026-09-29)
+
+[USER 2026-09-29] approved three additions: a Lean `main_link` driver with a
+differential lane, a memory-image lane, and zero panics as a hard pass
+condition.
+
+- **Linker** (`diff_main_link.sh`, `link-corpus/`): freestanding x86-64
+  programs (asm and C at -O0/-O2, several objects in both orders, archives
+  with used and unused members, COMMON and weak symbols, function/data
+  sections, `.eh_frame`, PIE-style objects, TLS), linked by `ld -static` for
+  the reference executable `main_link` reads. Before lem-lean A1 the Lean
+  linker produced an image with entry point 0 and no `.text` (auditor
+  finding); the lane then found lem-lean B14 (tuple-arity instances: the
+  "Got N input items" line) and B15 (dropped `let _ = errln ...`
+  diagnostics).
+- **Memory image** (`src/dump_image.lem`, `diff_main_elf.sh ... @`): the
+  annotated memory image of each file (elements with checksums, `by_range`
+  annotations in set order, so every range-tag comparison A1 fixed is
+  exercised) and the serialisation round trip of `copy_elf`.
+- **Runner verdicts** (both runners): stderr is compared when both sides
+  exit 0; a Lean panic is a hard failure unless it is the rendering of a
+  failure OCaml also raises (`panic`); both-fail cases compare the failure
+  messages (`bothfail` / `bothfail-msg`); a stderr that differs only in line
+  order is its own reviewed category (`stderrorder`, lem-lean A4).
+
+### Results (2026-09-29, lem-lean `18f6ef7`)
+
+- `main_elf`, 183 files x 7 flags (1281 cases), 120 s, stdout AND stderr:
+  1270 identical, 6 both fail with the same message, 5 OCaml `--in-out`
+  timeouts where Lean finished, 0 panics. The 5 OCaml runs, completed
+  without a timeout, are byte-identical to Lean's (stdout and stderr): zero
+  behavioural differences.
+- DWARF lanes, 24 files x 2 flags (48 cases): 38 identical, 10 both fail
+  with the same message (F7; four are multi-line messages), 0 mismatches.
+- Memory image, the 183 corpus files + the linker corpus's 36 objects and
+  executables (219): 208 identical dumps (202 with an identical serialisation
+  round trip; 6 ELF32 files are rejected identically by the ELF64 reader),
+  11 both fail with the same message (unrecognised relocation), 0
+  mismatches.
+- Linker, 13 cases: 12 linked outputs byte-identical (with identical stdout;
+  9 of them with stderr differing only in the order of the model's
+  "Considering relocatable file" lines, lem-lean A4: OCaml's `count_map`
+  applies f from the last element), 1 both fail with the same message
+  (`R_X86_64_TPOFF32` unimplemented, upstream). 0 mismatches, 0 panics.
+- Targeted: F10 (`e_shoff = 2^62`: upstream raises `int_of_big_int`, branch
+  and Lean print the model's error identically); non-ASCII names (a UTF-8
+  and a raw 0xEF byte) byte-identical to OCaml; fail-stop without
+  `LEAN_ABORT_ON_PANIC` (exit 1, message on stderr, no partial stdout).
+
 ## Divergences mirrored deliberately (not fixed)
 
 - **N1** `Byte_sequence_wrapper.compare` returns `bs2 - bs1` (by length, then
@@ -138,6 +236,15 @@ conversion (`land`/`lor`/`rshift` cannot leave [0, 256)).
 - `let {ocaml}` definitions of the model are widened to `{ocaml; lean}`
   (the Lean build contains the same code as the OCaml build), except
   `command_line` (reads `argv`; OCaml linker driver only).
+- `command_line.lem`: the argument interpretation is split out of
+  `command_line ()` as `command_line_of_args` (all targets);
+  `command_line ()` is `command_line_of_args (tail argv)`.
+- `main_link.lem`: the top-level driver is `let {ocaml} _ = ...` (it calls
+  `command_line ()`); `lean/driver/MainLink.lean` mirrors it line for line.
+- `dump_image.lem` (new, a test driver only): the memory-image view of an
+  ELF64 file (elements, `by_range` annotations in set order, serialisation
+  round trip), for the memory-image lane; `src/dump_image.opt` and the Lean
+  `dump_image`.
 - `declare lean target_rep` lines beside every OCaml rep; the Lean twins of
   the OCaml helpers live in `lean/handwritten/` with the same names.
 - `error.lem`: `declare {lean} ascii_rep function (>>=) = error_bind` (Lean

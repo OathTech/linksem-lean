@@ -80,7 +80,9 @@ let correctly_linked a linkables names options eout =
  * for each object, there's an ordered list of other objects 
  * in which to search for the *first* definition. *)
 
-let _ =
+(* The top-level driver is OCaml-only: targets without top-level effects
+ * (Lean: lean/driver/MainLink.lean) mirror it with their own I/O. *)
+let {ocaml} _ =
   let res =
     let (input_units, link_options) = command_line ()
     in

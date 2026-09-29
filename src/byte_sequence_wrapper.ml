@@ -148,11 +148,19 @@ let big_num_make len c =
 let big_num_zero_pad_to_length len bs =
   zero_pad_to_length (Nat_big_num.to_int len) bs
 
+(* A length beyond the sequence is the model's own failure; it used to raise
+   Failure "int_of_big_int" first for lengths >= 2^62 (OCaml's int), an
+   uncaught exception where the logical result is the Fail below
+   (linksem-lean findings F10). *)
 let big_num_dropbytes len bs =
-  dropbytes (Nat_big_num.to_int len) bs
+  if Nat_big_num.greater len (Nat_big_num.of_int bs.len) then
+    Fail "dropbytes: cannot drop more bytes than are contained in sequence"
+  else dropbytes (Nat_big_num.to_int len) bs
 
 let big_num_takebytes len bs =
-  takebytes (Nat_big_num.to_int len) bs
+  if Nat_big_num.greater len (Nat_big_num.of_int bs.len) then
+    Fail "takebytes: cannot take more bytes than are contained in sequence"
+  else takebytes (Nat_big_num.to_int len) bs
 
 let takebytes_with_length count bs_length bs =
   if length bs <> (Nat_big_num.to_int bs_length) then

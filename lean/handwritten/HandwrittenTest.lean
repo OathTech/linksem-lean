@@ -70,3 +70,10 @@ end bytes
 #guard Uint32_wrapper.uchar_of_bigint 256 == 0
 #guard Uint32_wrapper.uchar_add 255 1 == 0
 #guard Uint32_wrapper.uchar_shift_left 0x1f 4 == 0xf0
+
+-- audit item 9: Str.global_replace template semantics (OCaml outputs, probed)
+#guard Ml_bindings.string_replace "aORbORc" "OR" "p\\\\q" == "ap\\qbp\\qc"
+#guard Ml_bindings.string_replace "aORbORc" "OR" "p\\0q" == "apORqbpORqc"
+#guard Ml_bindings.string_replace "aORbORc" "OR" "p\\qx" == "ap\\qxbp\\qxc"
+#guard Ml_bindings.string_replace "aORbORc" "OR" "\\\\0" == "a\\0b\\0c"
+#guard Ml_bindings.string_replace "nomatch" "OR" "p\\" == "nomatch"

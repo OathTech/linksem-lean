@@ -96,21 +96,39 @@ private def findSubList (sub : List Char) : List Char → Nat → Option Nat
 def find_substring (sub : String) (s : String) : Option Nat :=
   findSubList sub.toList s.toList 0
 
+/-- The replacement TEMPLATE of `Str.global_replace`, expanded for one match
+    (audit item 9; semantics probed on the OCaml side): `\\` is a
+    backslash, `\0` the matched text, `\1`..`\9` raise (no groups in a
+    `regexp_string`), a backslash before any other character is kept as
+    is, a trailing backslash raises. OCaml only interprets the template when
+    a match occurs; so does this. -/
+private def expandReplTemplate (matched : List Char) : List Char → List Char
+  | [] => []
+  | ['\\'] => failwithI "Str.replace: illegal backslash sequence"
+  | '\\' :: '\\' :: rest => '\\' :: expandReplTemplate matched rest
+  | '\\' :: '0' :: rest => matched ++ expandReplTemplate matched rest
+  | '\\' :: c :: rest =>
+    if c.isDigit then failwithI "Str.replace: reference to unmatched group"
+    else '\\' :: c :: expandReplTemplate matched rest
+  | c :: rest => c :: expandReplTemplate matched rest
+
 /-- `Str.global_replace (Str.regexp_string substr) repl s`: leftmost,
     non-overlapping, left to right. The empty pattern matches at every
-    position (before each character and at the end), as Str does. -/
+    position (before each character and at the end), as Str does. The
+    replacement is a template (`expandReplTemplate`). -/
 def string_replace (s substr repl : String) : String :=
   let pat := substr.toList
+  let r := fun () => expandReplTemplate pat repl.toList
   let rec go (fuel : Nat) (cs : List Char) (acc : List Char) : List Char :=
     match fuel with
     | 0 => acc.reverse ++ cs
     | fuel + 1 =>
       if pat.isEmpty then
         match cs with
-        | [] => (repl.toList.reverse ++ acc).reverse
-        | c :: rest => go fuel rest (c :: repl.toList.reverse ++ acc)
+        | [] => ((r ()).reverse ++ acc).reverse
+        | c :: rest => go fuel rest (c :: (r ()).reverse ++ acc)
       else if isPrefixOfList pat cs then
-        go fuel (cs.drop pat.length) (repl.toList.reverse ++ acc)
+        go fuel (cs.drop pat.length) ((r ()).reverse ++ acc)
       else
         match cs with
         | [] => acc.reverse
@@ -193,14 +211,33 @@ only: the differential compares stdout of the Lean driver (which does its
 own output in `IO`) and never stderr. `never_extract` stops the compiler
 from sharing or hoisting a call; it does not stop dead-code elimination. -/
 
-@[never_extract] private unsafe def errlnImpl (s : String) : Unit :=
-  match unsafeBaseIO (IO.eprintln s |>.toBaseIO) with | _ => ()
-@[never_extract] private unsafe def errsImpl (s : String) : Unit :=
-  match unsafeBaseIO (IO.eprint s |>.toBaseIO) with | _ => ()
-@[never_extract] private unsafe def outlnImpl (s : String) : Unit :=
-  match unsafeBaseIO (IO.println s |>.toBaseIO) with | _ => ()
-@[never_extract] private unsafe def outsImpl (s : String) : Unit :=
-  match unsafeBaseIO (IO.print s |>.toBaseIO) with | _ => ()
+/-- OCaml strings are bytes and its output functions write them raw. The
+model's strings hold one character per byte (`Byte_sequence_wrapper.to_string`,
+`char_of_byte`) and linksem has no non-ASCII string literals, so every
+character is < 256 and is written as exactly that byte (`IO.print` would
+UTF-8-encode bytes >= 0x80 into two). A character >= 256 has no OCaml
+counterpart and fails loudly. -/
+def bytesOfString (s : String) : ByteArray :=
+  s.foldl (fun acc c =>
+    if c.toNat < 256 then acc.push c.toNat.toUInt8
+    else failwithI s!"output: character U+{c.toNat} has no byte (non-byte string)") .empty
+
+/-- Write `s` (plus a newline if `nl`) byte-exactly and flush. -/
+def writeString (h : IO.FS.Stream) (s : String) (nl : Bool) : IO Unit := do
+  let b := bytesOfString s
+  h.write (if nl then b.push 10 else b)
+  h.flush
+
+/-- A failed write fails loudly (OCaml raises `Sys_error`). -/
+@[never_extract] private unsafe def writeImpl (err nl : Bool) (s : String) : Unit :=
+  let act : IO Unit := do writeString (← if err then IO.getStderr else IO.getStdout) s nl
+  match unsafeBaseIO act.toBaseIO with
+  | Except.ok _ => ()
+  | Except.error e => failwithI s!"console write: {e}"
+@[never_extract] private unsafe def errlnImpl (s : String) : Unit := writeImpl true true s
+@[never_extract] private unsafe def errsImpl (s : String) : Unit := writeImpl true false s
+@[never_extract] private unsafe def outlnImpl (s : String) : Unit := writeImpl false true s
+@[never_extract] private unsafe def outsImpl (s : String) : Unit := writeImpl false false s
 
 @[implemented_by errlnImpl, never_extract] opaque errln (s : String) : Unit
 @[implemented_by errsImpl, never_extract] opaque errs (s : String) : Unit

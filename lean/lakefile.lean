@@ -8,7 +8,7 @@ package LinksemLean
 -- both together). Offline/unpushed development: redirect this URL to a local
 -- checkout with git's `url.<path>.insteadOf` (the linksem-lean container
 -- does this in scripts/env.sh).
-require LemLib from git "https://github.com/OathTech/lem-lean" @ "fe0347b12f55ea7f86aee1b339128090dfc467f0" / "lean-lib"
+require LemLib from git "https://github.com/OathTech/lem-lean" @ "18f6ef728165e098f6026ad051d3aad07acec28b" / "lean-lib"
 
 /-- The generated model modules. REWRITTEN by src/lem.mk `lean-extraction`
     between the markers; do not edit by hand. -/
@@ -66,6 +66,7 @@ def generatedModules : Array Lean.Name := #[
   `Byte_sequence_impl,
   `Command_line,
   `Default_printing,
+  `Dump_image,
   `Dwarf,
   `Dwarf_ctypes,
   `Elf64_file_of_elf_memory_image,
@@ -102,6 +103,7 @@ def generatedModules : Array Lean.Name := #[
   `Linker_script,
   `Load,
   `Main_elf,
+  `Main_link,
   `Memory_image,
   `Memory_image_orderings,
   `Missing_pervasives,
@@ -143,3 +145,17 @@ lean_lib LinksemAux where
 lean_exe main_elf where
   srcDir := "driver"
   root := `MainElf
+
+/-- The Lean `main_link`: I/O mirroring the OCaml-only driver of
+    src/main_link.lem. -/
+@[default_target]
+lean_exe main_link where
+  srcDir := "driver"
+  root := `MainLink
+
+/-- The Lean `dump_image`: I/O around the generated `Dump_image.dump_image`
+    (memory-image differential lane). -/
+@[default_target]
+lean_exe dump_image where
+  srcDir := "driver"
+  root := `DumpImage

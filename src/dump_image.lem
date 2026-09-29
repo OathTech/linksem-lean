@@ -1,0 +1,136 @@
+(** [dump_image], a test program for the memory-image view of an ELF file
+  * (added for the Lean port's differential testing; not part of upstream
+  * linksem). Run like so:
+  *   ./dump_image.opt BINARY
+  * It reads BINARY (ELF64), builds its annotated memory image
+  * ([Elf_memory_image_of_elf64_file]) under the first ABI accepting its
+  * header, and prints every element (name, start, length, contents size and
+  * checksum), every by_range annotation in set order, and whether
+  * serialising the file back ([bytes_of_elf64_file], as copy_elf does)
+  * reproduces its bytes.
+  *)
+
+open import Basic_classes
+open import Function
+open import List
+open import Maybe
+open import Num
+open import String
+import Map
+import Set
+import Set_extra
+
+open import Byte_sequence
+open import Byte_pattern
+open import Error
+open import Missing_pervasives
+open import Show
+open import Assert_extra
+
+open import Elf_file
+open import Elf_types_native_uint
+open import Elf_header
+open import Elf_interpreted_section
+open import Elf_interpreted_segment
+open import Elf_relocation
+open import Elf_symbol_table
+
+open import Memory_image
+open import Elf_memory_image
+open import Elf_memory_image_of_elf64_file
+open import Abis
+
+val show_maybe_natural : maybe natural -> string
+let show_maybe_natural m =
+  match m with
+    | Just n  -> "0x" ^ hex_string_of_natural n
+    | Nothing -> "-"
+  end
+
+(** A position-sensitive checksum of a byte pattern (unknown bytes count). *)
+val pattern_checksum : byte_pattern -> natural
+let pattern_checksum bp =
+  List.foldl (fun h b ->
+    let v = match b with Just x -> natural_of_byte x + 1 | Nothing -> 0 end in
+    (h * 257 + v) mod 4294967291) 0 bp
+
+val show_element : string * element -> string
+let show_element (name, e) =
+  "element " ^ name ^ " start=" ^ show_maybe_natural e.startpos
+    ^ " length=" ^ show_maybe_natural e.length
+    ^ " contents=" ^ show (List.length e.contents)
+    ^ " checksum=0x" ^ hex_string_of_natural (pattern_checksum e.contents)
+
+val show_file_feature : elf_file_feature -> string
+let show_file_feature f =
+  match f with
+    | ElfHeader _ -> "ElfHeader"
+    | ElfSectionHeaderTable _ -> "ElfSectionHeaderTable"
+    | ElfProgramHeaderTable _ -> "ElfProgramHeaderTable"
+    | ElfSection (i, s) -> "ElfSection " ^ show i ^ " " ^ s.elf64_section_name_as_string
+    | ElfSegment (i, s) -> "ElfSegment " ^ show i ^ " base=0x" ^ hex_string_of_natural s.elf64_segment_base
+  end
+
+val show_tag : range_tag any_abi_feature -> string
+let show_tag t =
+  match t with
+    | ImageBase -> "ImageBase"
+    | EntryPoint -> "EntryPoint"
+    | SymbolDef d -> "SymbolDef " ^ d.def_symname ^ " scn=" ^ show d.def_sym_scn ^ " idx=" ^ show d.def_sym_idx
+    | SymbolRef r ->
+      "SymbolRef " ^ r.ref.ref_symname ^ " scn=" ^ show r.ref.ref_sym_scn ^ " idx=" ^ show r.ref.ref_sym_idx
+        ^ (match r.maybe_reloc with
+             | Just rs -> " reloc=" ^ show rs.ref_rel_scn ^ "/" ^ show rs.ref_rel_idx
+                 ^ " info=0x" ^ hex_string_of_natural (natural_of_elf64_xword rs.ref_relent.elf64_ra_info)
+             | Nothing -> ""
+           end)
+    | FileFeature f -> "FileFeature " ^ show_file_feature f
+    | AbiFeature _ -> "AbiFeature"
+  end
+
+val show_range : maybe element_range -> string
+let show_range r =
+  match r with
+    | Just (el, (start, len)) -> el ^ "@0x" ^ hex_string_of_natural start ^ "+0x" ^ hex_string_of_natural len
+    | Nothing -> "-"
+  end
+
+(** [dump_image bs0] is the text [dump_image.opt] prints for the file
+  * contents [bs0]. *)
+val dump_image : byte_sequence -> error string
+let dump_image bs0 =
+  read_elf64_file bs0 >>= fun f ->
+  match List.find (fun a -> a.is_valid_elf_header f.elf64_file_header) all_abis with
+    | Nothing -> Error.fail "dump_image: no ABI accepts the ELF header"
+    | Just a ->
+      let img = elf_memory_image_of_elf64_file a "input" f in
+      let els = List.map show_element (Set_extra.toList (Map.toSet img.elements)) in
+      let tags = List.map (fun (r, t) -> "range " ^ show_range r ^ " " ^ show_tag t)
+        (Set_extra.toList img.by_range) in
+      (* the serialisation round trip of copy_elf: does writing the file
+         back reproduce its bytes? *)
+      let rt = match bytes_of_elf64_file f with
+        | Success bs ->
+          if Byte_sequence.equal bs bs0 then "roundtrip identical"
+          else "roundtrip differs: length 0x" ^ hex_string_of_natural (Byte_sequence.length bs)
+            ^ " vs 0x" ^ hex_string_of_natural (Byte_sequence.length bs0)
+        | Fail e -> "roundtrip fails: " ^ e
+      end in
+      return (String.concat "\n" (els ++ tags ++ [rt]))
+  end
+
+let {ocaml} _ =
+  let res =
+    let arg =
+      match argv with
+        | progname::fname::more -> fname
+        | _                     -> failwith "usage: dump_image <fname>"
+      end
+    in
+    Byte_sequence.acquire arg >>= fun bs0 ->
+    dump_image bs0
+  in
+    match res with
+      | Fail err  -> Missing_pervasives.errln ("[!]: " ^ err)
+      | Success s -> Missing_pervasives.outln s
+    end
