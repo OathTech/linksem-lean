@@ -3,10 +3,12 @@ open Lake DSL
 
 package LinksemLean
 
--- The LemLib from the same lem-lean checkout as the `lem` that generates
--- `generated/` (the two co-evolve). The path is relative to this checkout:
--- linksem-lean container layout `linksem/lean` + `deps/lem-lean`.
-require LemLib from "../../deps/lem-lean/lean-lib"
+-- LemLib, the Lean runtime of lem-lean's Lean backend, pinned to the SAME
+-- commit as the `lem` that generates `generated/` (the two co-evolve: bump
+-- both together). Offline/unpushed development: redirect this URL to a local
+-- checkout with git's `url.<path>.insteadOf` (the linksem-lean container
+-- does this in scripts/env.sh).
+require LemLib from git "https://github.com/OathTech/lem-lean" @ "fe0347b12f55ea7f86aee1b339128090dfc467f0" / "lean-lib"
 
 /-- The generated model modules. REWRITTEN by src/lem.mk `lean-extraction`
     between the markers; do not edit by hand. -/

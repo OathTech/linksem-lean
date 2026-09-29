@@ -180,6 +180,12 @@ other four against the earlier complete runs, the OCaml build having changed
 since only by F9, which reading cannot reach). Zero behavioural differences.
 DWARF lanes after B13: 48 cases, 0 mismatches.
 
+Re-run on Lean 4.32.2 without lem-lean B9 (toolchain move, lem-lean
+`fe0347b`, 2026-09-29), 120 s timeout: 1270 identical; 6 identical
+both-fail; 5 OCaml `--in-out` timeouts, all byte-identical to their complete
+OCaml outputs. DWARF lanes: 48 cases, 0 mismatches. Zero behavioural
+differences.
+
 DWARF lanes (`--debug-dump=info`, `--debug-dump=dies`) on the 24 files with
 `.debug_info` (20 corpus files + 4 `-gdwarf-4` builds at -O0/-O2, an object
 and a shared library): 48 cases, 38 identical, 10 both fail with the same
