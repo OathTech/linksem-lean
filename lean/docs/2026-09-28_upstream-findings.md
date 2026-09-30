@@ -319,6 +319,17 @@ condition.
   "Considering relocatable file" lines, lem-lean A4: OCaml's `count_map`
   applies f from the last element), 1 both fail with the same message
   (`R_X86_64_TPOFF32` unimplemented, upstream). 0 mismatches, 0 panics.
+- Fuzz, seed 1 (156 corpus files <= 200 KB x 20 mutants = 3120 mutants;
+  six `main_elf` flags + `dump_image`, 20 s, 4G cgroup cap per run): 21,107
+  of 21,840 runs completed before the background time limit stopped the
+  last shards: 20,268 identical, 618 both fail with the same message, 124
+  both hit a resource limit (F17 before the fix: now `Out_of_memory` vs the
+  Lean runtime's allocation-size check), 84 both time out, 12 OCaml timeouts
+  where Lean finished (all 12 byte-identical when completed; OCaml 20-21 s
+  vs Lean 8-9 s), 1 both fail with different messages (a mutant with two
+  defects, each side reporting the other one first: evaluation order,
+  lem-lean A4). No behavioural difference, no panic. (Later seeds: 10
+  mutants per file per invocation, to stay under the time limit.)
 - Targeted: F10 (`e_shoff = 2^62`: upstream raises `int_of_big_int`, branch
   and Lean print the model's error identically); non-ASCII names (a UTF-8
   and a raw 0xEF byte) byte-identical to OCaml; fail-stop without
@@ -422,7 +433,9 @@ machine, same inputs, identical output:
 | `--in-out` python3.4m | 775 s | 1.38 s |
 
 The `--in-out` gap is super-linear behaviour of the OCaml extraction of the
-same Lem code (cause not located). The Lean `--symbols` figure is after
+same Lem code (cause not located). Re-measured 2026-09-30 (other jobs running
+concurrently): `--in-out` on the five largest corpus files, OCaml 546-1212
+s, Lean 1-2 s, outputs byte-identical. The Lean `--symbols` figure is after
 replacing `toList`-based string helpers in `handwritten/Ml_bindings.lean`
 (before: 124 s on libicui18n: string tables are sliced once per symbol).
 

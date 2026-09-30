@@ -8,7 +8,7 @@ package LinksemLean
 -- both together). Offline/unpushed development: redirect this URL to a local
 -- checkout with git's `url.<path>.insteadOf` (the linksem-lean container
 -- does this in scripts/env.sh).
-require LemLib from git "https://github.com/OathTech/lem-lean" @ "18f6ef728165e098f6026ad051d3aad07acec28b" / "lean-lib"
+require LemLib from git "https://github.com/OathTech/lem-lean" @ "8ccbe400ea3f646a6e6a54435b952cfd04c1914f" / "lean-lib"
 
 /-- The generated model modules. REWRITTEN by src/lem.mk `lean-extraction`
     between the markers; do not edit by hand. -/

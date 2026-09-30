@@ -3,13 +3,13 @@
 # files at most MAX_BYTES in size, run through diff_main_elf.sh (same
 # verdicts: a mismatch or a Lean panic fails the lane) for main_elf flags
 # and dump_image, in SHARDS parallel shards.
-# Usage: run_fuzz.sh CORPUS_LIST OUTDIR [SEED [PER_FILE]]
+# Usage: run_fuzz.sh CORPUS_LIST OUTDIR [SEED [PER_FILE]]  (PER_FILE 10: ~1 h on the corpus)
 # Env: CAPPED (required), DIFF_MEM (4G per run), MAX_BYTES (200000),
 #      SHARDS (8), FUZZ_TIMEOUT (20 s per run),
 #      FLAGS (main_elf flags, space-separated).
 set -uo pipefail
 HERE=$(cd "$(dirname "$0")" && pwd); L=$(cd "$HERE/.." && pwd)
-LIST="$1"; OUT="$2"; SEED="${3:-1}"; PER="${4:-20}"
+LIST="$1"; OUT="$2"; SEED="${3:-1}"; PER="${4:-10}"
 MAX_BYTES="${MAX_BYTES:-200000}"; SHARDS="${SHARDS:-8}"
 FLAGS="${FLAGS:---file-header --program-headers --section-headers --relocs --dynamic --symbols}"
 # Mutants are built to exhaust resources: every run is memory-capped by

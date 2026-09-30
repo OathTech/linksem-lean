@@ -23,7 +23,7 @@ performance). Backend bugs found by this port are recorded in lem-lean's
 | `driver/MainLink.lean` | the Lean `main_link` (the linker test driver): mirrors the OCaml-only driver of `src/main_link.lem` |
 | `driver/DumpImage.lean` | the Lean `dump_image`: the I/O around `Dump_image.dump_image` (`src/dump_image.lem`, a test driver) |
 | `lakefile.lean` | LemLib pinned by commit (bump it together with the `lem` you generate with); the generated-module list is rewritten by `gen-roots.sh` |
-| `diff_main_elf.sh` | differential runner (corpus x flags; stdout, stderr, exit class); flag `@` for tools taking the file only (`dump_image`) |
+| `diff_main_elf.sh`, `diff_sharded.sh` | differential runner (and its 8-way parallel wrapper) (corpus x flags; stdout, stderr, exit class); flag `@` for tools taking the file only (`dump_image`) |
 | `fuzz/`, `twins/` | fuzz lane (mutated ELF files) and twin lane (Lean twins vs OCaml helpers) |
 | `docs/upstream-tray/` | upstream report drafts (README, INDEX, one report per finding) |
 | `diff_main_link.sh`, `link-corpus/` | linker differential: `link-corpus/build_cases.sh` compiles freestanding x86-64 programs (`cases.txt`) and links them with `ld` as the reference `out`; the runner compares both `main_link` builds' `out.test-out`, stdout, stderr, exit class |
@@ -73,6 +73,13 @@ Every runner caps each tool run in its own cgroup through lem-lean's
 refuses to start without it:
 
     export CAPPED=/path/to/lem-lean/scripts/capped    # DIFF_MEM=4G per run by default
+
+The full-corpus run is sharded (`diff_sharded.sh`, 8 parallel shards,
+~3 min without `--in-out`) and runs once, just before a merge; day to day,
+run the lane for what changed (linker, twins, DWARF, memory image):
+
+    ./diff_sharded.sh ../src/main_elf.opt .lake/build/bin/main_elf corpus.txt out/ \
+        --file-header --program-headers --section-headers --relocs --dynamic --symbols
 
 Memory-image lane (the same runner, tools taking the file only):
 
