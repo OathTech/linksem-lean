@@ -66,8 +66,9 @@ the URL in `lakefile.lean` to a local checkout, e.g.
 --symbols`. A case is identical when the exit class and stdout match (and
 stderr, when both succeed); cases where both sides fail or both time out
 are listed separately and their messages must be reviewed. The Lean
-drivers stop at the first reached model failure (LemLib's `lemFailStop`),
-as the OCaml exception stops the OCaml program.
+drivers refuse to run unless `LEAN_ABORT_ON_PANIC=1` (LemLib's
+`lemRequireAbortOnPanic`), so the first reached model failure aborts the
+program, as the OCaml exception stops the OCaml one; the runner sets it.
 
 Upstream bugs found by the port: `docs/2026-09-28_upstream-findings.md`
 and `docs/upstream-tray/`. The port mirrors upstream except where upstream

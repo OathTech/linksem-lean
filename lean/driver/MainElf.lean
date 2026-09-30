@@ -11,11 +11,11 @@ The Lean `main_elf`: the I/O shell around the generated `main_elf_run` /
 * `Left err` goes to stderr with `errln`, `Right out` to stdout with `outln`;
   exit status 0 in both cases, as in OCaml.
 
-Fail-stop (audit item 2): `lemFailStop` makes every reached failure (a
-`failwithI` panic: the model's `failwith`, or an OCaml-exception mirror in
-the hand-written layer) print its message and exit (status 1), as the OCaml
-exception stops the OCaml program (status 2) -- without it a Lean panic
-continues with a default value.
+Fail-stop: `lemRequireAbortOnPanic` (LemLib) refuses to run (exit 2)
+unless `LEAN_ABORT_ON_PANIC=1`, so every reached failure (a `failwithI`
+panic: the model's `failwith`, or an OCaml-exception mirror in the
+hand-written layer) aborts the program, as the OCaml exception stops the
+OCaml program -- without it a Lean panic continues with a default value.
 
 Byte output (audit item 5): output is written byte-exactly, as OCaml's
 `print_string` does (`Ml_bindings.writeString`).
@@ -25,7 +25,7 @@ that is not valid UTF-8 cannot be opened (OCaml can); it fails loudly.
 -/
 
 def main (args : List String) : IO UInt32 := do
-  lemFailStop
+  lemRequireAbortOnPanic
   match args with
   | flag :: fname :: _ =>
     match Byte_sequence_wrapper.acquire fname with

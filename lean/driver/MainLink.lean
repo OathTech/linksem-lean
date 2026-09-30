@@ -11,9 +11,9 @@ end of src/main_link.lem (`let {ocaml} _ = ...`), line for line:
 * the linked image is written to `<output>.test-out`, as in OCaml; a write
   error goes to stdout as `error writing output: ...`.
 
-Exit status 0 unless a failure is reached: `lemFailStop` (lem-lean A2) makes
-a reached failure print its message and exit 1, as the OCaml exception exits
-2. Output is byte-exact (`Ml_bindings.writeString`). The model's own
+Exit status 0 unless a failure is reached: `lemRequireAbortOnPanic`
+(LemLib) refuses to run unless `LEAN_ABORT_ON_PANIC=1`, so a reached failure
+aborts the program, as the OCaml exception stops the OCaml program. Output is byte-exact (`Ml_bindings.writeString`). The model's own
 `errln` diagnostics inside the linker are best-effort (see
 `Ml_bindings`, "Console output from pure code"); the differential compares
 the output file, stdout and the exit class.
@@ -76,7 +76,7 @@ def mainLinkRes (args : List String) : IO (error String) := do
   return .Success (Show.show0 v)
 
 def main (args : List String) : IO UInt32 := do
-  lemFailStop
+  lemRequireAbortOnPanic
   match ← mainLinkRes args with
   | .Fail err => errln' ("[!]: " ++ err)
   | .Success e => errln' e

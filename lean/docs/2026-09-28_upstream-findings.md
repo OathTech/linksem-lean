@@ -219,9 +219,10 @@ twin now mirrors the probed semantics (`#guard`s). Only `ldconfig`
   names (symbol/section/library/DWARF strings; reached by any UTF-8
   identifier from gcc). A character >= 256 fails loudly (none can occur:
   linksem has no non-ASCII literals).
-- `lemFailStop` (lem-lean A2) makes a reached failure stop the program (exit
-  1; OCaml exits 2 on the uncaught exception); it used to continue with a
-  default value unless `LEAN_ABORT_ON_PANIC=1` was set.
+- Fail-stop: the drivers call LemLib's `lemRequireAbortOnPanic`, which
+  refuses to run (exit 2) unless `LEAN_ABORT_ON_PANIC=1`, so a reached
+  failure aborts the program as the OCaml exception stops the OCaml one
+  (lem-lean replaced its earlier `lemFailStop` runtime switch, 2026-09-30).
 - Known limitation: file names that are not valid UTF-8 cannot be opened
   (Lean's file API takes a UTF-8 `String`); loud failure.
 
