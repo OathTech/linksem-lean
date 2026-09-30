@@ -1,0 +1,16 @@
+{"version": "1.2.0",
+ "packagesDir": ".lake/packages",
+ "packages":
+ [{"url": "https://github.com/OathTech/lem-lean",
+   "type": "git",
+   "subDir": "lean-lib",
+   "scope": "",
+   "rev": "66e3cf8da48c1bee7db5313729e2b3e9b1d3d345",
+   "name": "LemLib",
+   "manifestFile": "lake-manifest.json",
+   "inputRev": "66e3cf8da48c1bee7db5313729e2b3e9b1d3d345",
+   "inherited": false,
+   "configFile": "lakefile.lean"}],
+ "name": "LinksemLean",
+ "lakeDir": ".lake",
+ "fixedToolchain": false}
