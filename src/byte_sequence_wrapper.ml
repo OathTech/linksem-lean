@@ -149,11 +149,21 @@ let big_num_find_byte bs b=
   | Some i -> Some (Nat_big_num.of_int i)
   | None -> None
 
+(* A length beyond the host's largest byte string cannot be allocated: say
+   so (Out_of_memory), rather than failing in the int conversion
+   (int_of_big_int from 2^62) or in Bytes.create. Reached by a crafted
+   sh_offset near 2^62: bytes_of_elf64_file pads the file image up to it. *)
+let big_num_length_fits len =
+  Nat_big_num.less_equal len (Nat_big_num.of_int Sys.max_string_length)
+
 let big_num_make len c =
-  make (Nat_big_num.to_int len) c
+  if big_num_length_fits len then make (Nat_big_num.to_int len) c
+  else raise Out_of_memory
 
 let big_num_zero_pad_to_length len bs =
-  zero_pad_to_length (Nat_big_num.to_int len) bs
+  (* bs is shorter than any length beyond the host limit: padding needed *)
+  if big_num_length_fits len then zero_pad_to_length (Nat_big_num.to_int len) bs
+  else raise Out_of_memory
 
 (* A length beyond the sequence is the model's own failure; converting it
    with [Nat_big_num.to_int] first raised Failure "int_of_big_int" for
