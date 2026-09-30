@@ -41,7 +41,7 @@ val concatS : list string -> string
 let concatS ss = concatS' ss ""
 
 val harness_string_of_elf32_file_header : elf32_header -> string
-let {ocaml} harness_string_of_elf32_file_header hdr =
+let {ocaml; lean} harness_string_of_elf32_file_header hdr =
   unlines [
     "ELF Header:"
   ; "  Magic:" ^ "   "                           ^ unsafe_hex_string_of_uc_list (hdr.elf32_ident)
@@ -66,7 +66,7 @@ let {ocaml} harness_string_of_elf32_file_header hdr =
   ]
 
 val harness_string_of_elf64_file_header : elf64_header -> string
-let {ocaml} harness_string_of_elf64_file_header hdr =
+let {ocaml; lean} harness_string_of_elf64_file_header hdr =
   unlines [
     "ELF Header:"
   ; "  Magic:" ^ "   "                           ^ unsafe_hex_string_of_uc_list (hdr.elf64_ident)
@@ -91,7 +91,7 @@ let {ocaml} harness_string_of_elf64_file_header hdr =
   ]
 
 val harness_string_of_elf32_program_header_table_entry : (natural -> string) -> (natural -> string) -> byte_sequence -> elf32_program_header_table_entry -> string
-let {ocaml} harness_string_of_elf32_program_header_table_entry os proc bs0 pent =
+let {ocaml; lean} harness_string_of_elf32_program_header_table_entry os proc bs0 pent =
   let typ = string_of_segment_type os proc (natural_of_elf32_word pent.elf32_p_type) in
   let typ_s =
     let len = 15 - String.stringLength typ in
@@ -126,7 +126,7 @@ let {ocaml} harness_string_of_elf32_program_header_table_entry os proc bs0 pent 
       ""
 
 val harness_string_of_elf64_program_header_table_entry : (natural -> string) -> (natural -> string) -> byte_sequence -> elf64_program_header_table_entry -> string
-let {ocaml} harness_string_of_elf64_program_header_table_entry os proc bs0 pent =
+let {ocaml; lean} harness_string_of_elf64_program_header_table_entry os proc bs0 pent =
   let typ = string_of_segment_type os proc (natural_of_elf64_word pent.elf64_p_type) in
   let typ_s =
     let len = 15 - String.stringLength typ in
@@ -161,17 +161,17 @@ let {ocaml} harness_string_of_elf64_program_header_table_entry os proc bs0 pent 
       ""
 
 val harness_string_of_efl32_pht : (natural -> string) -> (natural -> string) -> elf32_program_header_table -> byte_sequence -> string
-let {ocaml} harness_string_of_elf32_pht os proc pht bs0 =
+let {ocaml; lean} harness_string_of_elf32_pht os proc pht bs0 =
     "  Type           Offset   VirtAddr   PhysAddr   FileSiz MemSiz  Flg Align\n" ^
       unlines (List.map (harness_string_of_elf32_program_header_table_entry os proc bs0) pht)
 
 val harness_string_of_efl64_pht : (natural -> string) -> (natural -> string) -> elf64_program_header_table -> byte_sequence -> string
-let {ocaml} harness_string_of_elf64_pht os proc pht bs0 =
+let {ocaml; lean} harness_string_of_elf64_pht os proc pht bs0 =
     "  Type           Offset   VirtAddr           PhysAddr           FileSiz  MemSiz   Flg Align\n" ^
       unlines (List.map (harness_string_of_elf64_program_header_table_entry os proc bs0) pht)
 
 val harness_string_of_elf32_segment_section_mappings : elf32_header -> elf32_program_header_table -> elf32_section_header_table -> string_table -> string
-let {ocaml} harness_string_of_elf32_segment_section_mappings hdr pht sht stbl =
+let {ocaml; lean} harness_string_of_elf32_segment_section_mappings hdr pht sht stbl =
   let map =
     List.mapi (fun i -> fun pent ->
       let mapping =
@@ -197,7 +197,7 @@ let {ocaml} harness_string_of_elf32_segment_section_mappings hdr pht sht stbl =
     concatS (intercalate "\n" map)
 
 val harness_string_of_elf64_segment_section_mappings : elf64_header -> elf64_program_header_table -> elf64_section_header_table -> string_table -> string
-let {ocaml} harness_string_of_elf64_segment_section_mappings hdr pht sht stbl =
+let {ocaml; lean} harness_string_of_elf64_segment_section_mappings hdr pht sht stbl =
   let map =
     List.mapi (fun i -> fun pent ->
       let mapping =
@@ -223,7 +223,7 @@ let {ocaml} harness_string_of_elf64_segment_section_mappings hdr pht sht stbl =
     concatS (intercalate "\n" map)
 
 val harness_string_of_elf32_program_headers : (natural -> string) -> (natural -> string) -> elf32_header -> elf32_program_header_table -> elf32_section_header_table -> string_table -> byte_sequence -> string
-let {ocaml} harness_string_of_elf32_program_headers os proc hdr pht sht stbl bs0 =
+let {ocaml; lean} harness_string_of_elf32_program_headers os proc hdr pht sht stbl bs0 =
   let pht_len = List.length pht in
     if pht_len = 0 then
       "\nThere are no program headers in this file."
@@ -243,7 +243,7 @@ let {ocaml} harness_string_of_elf32_program_headers os proc hdr pht sht stbl bs0
       ]
 
 val harness_string_of_elf64_program_headers : (natural -> string) -> (natural -> string) -> elf64_header -> elf64_program_header_table -> elf64_section_header_table -> string_table -> byte_sequence -> string
-let {ocaml} harness_string_of_elf64_program_headers os proc hdr pht sht stbl bs0 =
+let {ocaml; lean} harness_string_of_elf64_program_headers os proc hdr pht sht stbl bs0 =
   let pht_len = List.length pht in
     if pht_len = 0 then
       "\nThere are no program headers in this file."
@@ -263,14 +263,14 @@ let {ocaml} harness_string_of_elf64_program_headers os proc hdr pht sht stbl bs0
       ]
 
 val harness_sht32_flag_legend : string
-let {ocaml} harness_sht32_flag_legend =
+let {ocaml; lean} harness_sht32_flag_legend =
   "\nKey to Flags:
   W (write), A (alloc), X (execute), M (merge), S (strings)
   I (info), L (link order), G (group), T (TLS), E (exclude), x (unknown)
   O (extra OS processing required) o (OS specific), p (processor specific)"
 
 val harness_sht64_flag_legend : natural -> string
-let {ocaml} harness_sht64_flag_legend mach =
+let {ocaml; lean} harness_sht64_flag_legend mach =
   if mach = elf_ma_x86_64 ||
      mach = elf_ma_l10m ||
      mach = elf_ma_k10m then
@@ -285,7 +285,7 @@ let {ocaml} harness_sht64_flag_legend mach =
   O (extra OS processing required) o (OS specific), p (processor specific)"
 
 val harness_string_of_elf32_sht : (natural -> string) -> (natural -> string) -> (natural -> string) -> elf32_section_header_table -> string_table -> string
-let {ocaml} harness_string_of_elf32_sht os proc usr sht stbl =
+let {ocaml; lean} harness_string_of_elf32_sht os proc usr sht stbl =
   "  [Nr] Name              Type            Addr     Off    Size   ES Flg Lk Inf Al\n" ^
   unlines (List.mapi (fun i -> fun sec ->
     let is =
@@ -350,7 +350,7 @@ let {ocaml} harness_string_of_elf32_sht os proc usr sht stbl =
       str) sht)
 
 val harness_string_of_elf64_sht : (natural -> string) -> (natural -> string) -> (natural -> string) -> elf64_section_header_table -> string_table -> string
-let {ocaml} harness_string_of_elf64_sht os proc usr sht stbl =
+let {ocaml; lean} harness_string_of_elf64_sht os proc usr sht stbl =
   "  [Nr] Name              Type            Address          Off    Size   ES Flg Lk Inf Al\n" ^
   unlines (List.mapi (fun i -> fun sec ->
     let is =
@@ -416,7 +416,7 @@ let {ocaml} harness_string_of_elf64_sht os proc usr sht stbl =
 
 
 val harness_string_of_elf32_section_headers : (natural -> string) -> (natural -> string) -> (natural -> string) -> elf32_header -> elf32_section_header_table -> string_table -> string
-let {ocaml} harness_string_of_elf32_section_headers os proc usr hdr sht stbl =
+let {ocaml; lean} harness_string_of_elf32_section_headers os proc usr hdr sht stbl =
   unlines [
     "There are " ^ show (List.length sht) ^ " section headers, starting at offset 0x" ^ unsafe_hex_string_of_natural 0 (natural_of_elf32_off hdr.elf32_shoff) ^ ":"
   ; ""
@@ -425,7 +425,7 @@ let {ocaml} harness_string_of_elf32_section_headers os proc usr hdr sht stbl =
   ] ^ harness_sht32_flag_legend
 
 val harness_string_of_elf64_section_headers : (natural -> string) -> (natural -> string) -> (natural -> string) -> elf64_header -> elf64_section_header_table -> string_table -> string
-let {ocaml} harness_string_of_elf64_section_headers os proc usr hdr sht stbl =
+let {ocaml; lean} harness_string_of_elf64_section_headers os proc usr hdr sht stbl =
   unlines [
     "There are " ^ show (List.length sht) ^ " section headers, starting at offset 0x" ^ unsafe_hex_string_of_natural 0 (natural_of_elf64_off hdr.elf64_shoff) ^ ":"
   ; ""
@@ -435,7 +435,7 @@ let {ocaml} harness_string_of_elf64_section_headers os proc usr hdr sht stbl =
 
 val harness_string_of_elf32_reloc_entry : (natural -> string) -> elf32_section_header_table ->
   elf32_symbol_table -> string_table -> string_table -> elf32_relocation -> string
-let {ocaml} harness_string_of_elf32_reloc_entry os sht symtab stbl sechdr_stbl rel =
+let {ocaml; lean} harness_string_of_elf32_reloc_entry os sht symtab stbl sechdr_stbl rel =
   let off  = natural_of_elf32_addr rel.elf32_r_offset in
   let inf  = natural_of_elf32_word rel.elf32_r_info in
   let typ  = Missing_pervasives.unsafe_string_take 22 (os 0) in (* FIXME *)
@@ -510,7 +510,7 @@ let {ocaml} harness_string_of_elf32_reloc_entry os sht symtab stbl sechdr_stbl r
 
 val harness_string_of_elf64_reloc_a_entry : (natural -> string) -> elf64_symbol_table ->
   elf64_section_header_table -> string_table -> string_table -> elf64_relocation_a -> string
-let {ocaml} harness_string_of_elf64_reloc_a_entry os symtab sht stbl sechdr_stbl rel =
+let {ocaml; lean} harness_string_of_elf64_reloc_a_entry os symtab sht stbl sechdr_stbl rel =
   let off    = natural_of_elf64_addr  rel.elf64_ra_offset in
   let inf    = natural_of_elf64_xword rel.elf64_ra_info in
   let add    = integer_of_elf64_sxword rel.elf64_ra_addend in
@@ -588,7 +588,7 @@ let {ocaml} harness_string_of_elf64_reloc_a_entry os symtab sht stbl sechdr_stbl
 
 val harness_string_of_elf32_relocs' : endianness -> (natural -> string) -> elf32_file -> elf32_section_header_table ->
   elf32_section_header_table -> string_table -> string_table -> byte_sequence -> string
-let {ocaml} harness_string_of_elf32_relocs' endian os f1 sht_relocs sht shdr stbl bs0 =
+let {ocaml; lean} harness_string_of_elf32_relocs' endian os f1 sht_relocs sht shdr stbl bs0 =
   let rels =
     mapM (fun ent ->
       let off = natural_of_elf32_off  ent.elf32_sh_offset in
@@ -618,7 +618,7 @@ let {ocaml} harness_string_of_elf32_relocs' endian os f1 sht_relocs sht shdr stb
 val harness_string_of_elf64_relocs' : endianness -> (natural -> string) -> elf64_file ->
   elf64_section_header_table -> elf64_section_header_table ->
   string_table -> string_table -> byte_sequence -> string
-let {ocaml} harness_string_of_elf64_relocs' endian os f1 reloc_sht sht shdr stbl bs0 =
+let {ocaml; lean} harness_string_of_elf64_relocs' endian os f1 reloc_sht sht shdr stbl bs0 =
   let rels =
     mapM (fun ent ->
       let off = natural_of_elf64_off  ent.elf64_sh_offset in
@@ -646,7 +646,7 @@ let {ocaml} harness_string_of_elf64_relocs' endian os f1 reloc_sht sht shdr stbl
     end
 
 val harness_string_of_elf32_relocs : elf32_file -> (natural -> string) -> byte_sequence -> string
-let {ocaml} harness_string_of_elf32_relocs f1 os bs0 =
+let {ocaml; lean} harness_string_of_elf32_relocs f1 os bs0 =
   let hdr       = f1.elf32_file_header in
   let sht       = f1.elf32_file_section_header_table in
   let endian    = get_elf32_header_endianness hdr in
@@ -665,7 +665,7 @@ let {ocaml} harness_string_of_elf32_relocs f1 os bs0 =
     end
 
 val harness_string_of_elf64_relocs : elf64_file -> (natural -> string) -> byte_sequence -> string
-let {ocaml} harness_string_of_elf64_relocs f1 os bs0 =
+let {ocaml; lean} harness_string_of_elf64_relocs f1 os bs0 =
   let hdr       = f1.elf64_file_header in
   let sht       = f1.elf64_file_section_header_table in
   let endian    = get_elf64_header_endianness hdr in
@@ -685,7 +685,7 @@ let {ocaml} harness_string_of_elf64_relocs f1 os bs0 =
 
 val harness_string_of_elf32_symbol_table_entry : nat -> (natural -> string) ->
   (natural -> string) -> byte_sequence -> string_table -> elf32_symbol_table_entry -> string
-let {ocaml} harness_string_of_elf32_symbol_table_entry num os proc bs0 stbl ent =
+let {ocaml; lean} harness_string_of_elf32_symbol_table_entry num os proc bs0 stbl ent =
   let vlu = unsafe_hex_string_of_natural 8 (natural_of_elf32_addr ent.elf32_st_value) in
   let siz = show (natural_of_elf32_word ent.elf32_st_size) in
   let siz_pad =
@@ -769,7 +769,7 @@ let {ocaml} harness_string_of_elf32_symbol_table_entry num os proc bs0 stbl ent 
     ]
 
 val harness_string_of_elf32_syms' : endianness -> (natural -> string) -> (natural -> string) -> elf32_file -> elf32_section_header_table -> elf32_section_header_table -> string_table -> byte_sequence -> string
-let {ocaml} harness_string_of_elf32_syms' endian os proc f1 filtered_sht sht shdr bs0 =
+let {ocaml; lean} harness_string_of_elf32_syms' endian os proc f1 filtered_sht sht shdr bs0 =
   let rels =
     mapM (fun ent ->
       let off = natural_of_elf32_off  ent.elf32_sh_offset in
@@ -798,7 +798,7 @@ let {ocaml} harness_string_of_elf32_syms' endian os proc f1 filtered_sht sht shd
     end
 
 val harness_string_of_elf32_syms : elf32_file -> (natural -> string) -> (natural -> string) -> byte_sequence -> string
-let {ocaml} harness_string_of_elf32_syms f1 os proc bs0 =
+let {ocaml; lean} harness_string_of_elf32_syms f1 os proc bs0 =
   let hdr = f1.elf32_file_header in
   let sht = f1.elf32_file_section_header_table in
   let endian = get_elf32_header_endianness hdr in
@@ -817,7 +817,7 @@ let {ocaml} harness_string_of_elf32_syms f1 os proc bs0 =
     end
 
 val harness_string_of_elf64_symbol_table_entry : nat -> (natural -> string) -> (natural -> string) -> string_table -> elf64_symbol_table_entry -> string
-let {ocaml} harness_string_of_elf64_symbol_table_entry num os proc stbl ent =
+let {ocaml; lean} harness_string_of_elf64_symbol_table_entry num os proc stbl ent =
   let vlu = unsafe_hex_string_of_natural 16 (natural_of_elf64_addr ent.elf64_st_value) in
   let siz = show (natural_of_elf64_xword ent.elf64_st_size) in
   let siz_pad =
@@ -899,7 +899,7 @@ let {ocaml} harness_string_of_elf64_symbol_table_entry num os proc stbl ent =
 
 
 val harness_string_of_elf64_syms' : endianness -> (natural -> string) -> (natural -> string) -> elf64_file -> elf64_section_header_table -> elf64_section_header_table -> string_table -> byte_sequence -> string
-let {ocaml} harness_string_of_elf64_syms' endian os proc f1 filtered_sht sht shdr bs0 =
+let {ocaml; lean} harness_string_of_elf64_syms' endian os proc f1 filtered_sht sht shdr bs0 =
   let rels =
     mapM (fun ent ->
       let off = natural_of_elf64_off  ent.elf64_sh_offset in
@@ -930,7 +930,7 @@ let {ocaml} harness_string_of_elf64_syms' endian os proc f1 filtered_sht sht shd
 
    
 val harness_string_of_elf64_syms : elf64_file -> (natural -> string) -> (natural -> string) -> byte_sequence -> string
-let {ocaml} harness_string_of_elf64_syms f1 os proc bs0 =
+let {ocaml; lean} harness_string_of_elf64_syms f1 os proc bs0 =
   let hdr = f1.elf64_file_header in
   let sht = f1.elf64_file_section_header_table in
   let endian = get_elf64_header_endianness hdr in
@@ -953,7 +953,7 @@ let {ocaml} harness_string_of_elf64_syms f1 os proc bs0 =
 (* convenient symbol table extractor for read-dwarf *)
 (*
   val read_dwarf_symbol_table_of_elf64_syms' : endianness -> (natural -> string) -> (natural -> string) -> elf64_file -> elf64_section_header_table -> elf64_section_header_table -> string_table -> byte_sequence -> list (string * natural)
-let {ocaml} read_dwarf_symbol_table_of_elf64_syms' endian os proc f1 filtered_sht sht shdr bs0 =
+let {ocaml; lean} read_dwarf_symbol_table_of_elf64_syms' endian os proc f1 filtered_sht sht shdr bs0 =
   let rels =
     mapM (fun ent ->
       let off = natural_of_elf64_off  ent.elf64_sh_offset in
@@ -983,7 +983,7 @@ let {ocaml} read_dwarf_symbol_table_of_elf64_syms' endian os proc f1 filtered_sh
     end
 
 val read_dwarf_symbol_table_of_elf64_syms : elf64_file -> (natural -> string) -> (natural -> string) -> byte_sequence -> string
-let {ocaml} read_dwarf_symbol_table_of_elf64_syms f1 os proc bs0 =
+let {ocaml; lean} read_dwarf_symbol_table_of_elf64_syms f1 os proc bs0 =
   let hdr = f1.elf64_file_header in
   let sht = f1.elf64_file_section_header_table in
   let endian = get_elf64_header_endianness hdr in
@@ -1006,10 +1006,11 @@ let {ocaml} read_dwarf_symbol_table_of_elf64_syms f1 os proc bs0 =
   
 val string_of_unix_time : natural -> string
 declare ocaml target_rep function string_of_unix_time = `Ml_bindings.string_of_unix_time`
+declare lean     target_rep function string_of_unix_time = `Ml_bindings.string_of_unix_time`
 
 val string_of_dyn_value : forall 'addr 'size. dyn_value 'addr 'size ->
   ('addr -> string) -> ('size -> string) -> string
-let {ocaml} string_of_dyn_value dyn addr size =
+let {ocaml; lean} string_of_dyn_value dyn addr size =
   match dyn with
     | Address a  -> addr a
     | Size    s  -> size s
@@ -1030,14 +1031,14 @@ let {ocaml} string_of_dyn_value dyn addr size =
   end
 
 val string_of_elf32_dyn_value : elf32_dyn_value -> string
-let {ocaml} string_of_elf32_dyn_value dyn =
+let {ocaml; lean} string_of_elf32_dyn_value dyn =
   string_of_dyn_value
     dyn
     (fun a -> "0x" ^ unsafe_hex_string_of_natural 0 (natural_of_elf32_addr a))
     (fun s -> show s ^ " (bytes)")
 
 val string_of_elf64_dyn_value : elf64_dyn_value -> string
-let {ocaml} string_of_elf64_dyn_value dyn =
+let {ocaml; lean} string_of_elf64_dyn_value dyn =
   string_of_dyn_value
     dyn
     (fun a -> "0x" ^ unsafe_hex_string_of_natural 0 (natural_of_elf64_addr a))
@@ -1046,7 +1047,7 @@ let {ocaml} string_of_elf64_dyn_value dyn =
 val harness_string_of_elf32_dyn_entry : bool -> elf32_dyn -> (natural -> bool) -> (natural -> string) ->
   (elf32_dyn -> string_table -> error elf32_dyn_value) ->
     (elf32_dyn -> string_table -> error elf32_dyn_value) -> string_table -> string
-let {ocaml} harness_string_of_elf32_dyn_entry shared_object dyn os_additional_tags typ os_dyn proc_dyn stbl =
+let {ocaml; lean} harness_string_of_elf32_dyn_entry shared_object dyn os_additional_tags typ os_dyn proc_dyn stbl =
   let tag = unsafe_hex_string_of_natural 8 (naturalFromInteger (integer_of_elf32_sword dyn.elf32_dyn_tag)) in
   let typ = "(" ^ typ (naturalFromInteger (integer_of_elf32_sword dyn.elf32_dyn_tag)) ^ ")" in
   let vlu =
@@ -1076,7 +1077,7 @@ val harness_string_of_elf32_dynamic_section' : elf32_file -> elf32_program_heade
     (natural -> error tag_correspondence) -> (natural -> string) ->
       (elf32_dyn -> string_table -> error elf32_dyn_value) ->
         (elf32_dyn -> string_table -> error elf32_dyn_value) -> string
-let {ocaml} harness_string_of_elf32_dynamic_section' f1 dyn bs0 os_additional_ranges os proc os_print os_dyn proc_dyn =
+let {ocaml; lean} harness_string_of_elf32_dynamic_section' f1 dyn bs0 os_additional_ranges os proc os_print os_dyn proc_dyn =
   let endian = get_elf32_header_endianness f1.elf32_file_header in
   let sht = f1.elf32_file_section_header_table in
   let off = natural_of_elf32_off dyn.elf32_p_offset in
@@ -1106,7 +1107,7 @@ val harness_string_of_elf32_dynamic_section : elf32_file -> byte_sequence ->
     (natural -> error tag_correspondence) -> (natural -> string) ->
       (elf32_dyn -> string_table -> error elf32_dyn_value) ->
         (elf32_dyn -> string_table -> error elf32_dyn_value) -> string
-let {ocaml} harness_string_of_elf32_dynamic_section f1 bs0 os_additional_ranges os proc os_print os_dyn proc_dyn =
+let {ocaml; lean} harness_string_of_elf32_dynamic_section f1 bs0 os_additional_ranges os proc os_print os_dyn proc_dyn =
   let pht = f1.elf32_file_program_header_table in
   let dyn =
     List.filter (fun x ->
@@ -1129,7 +1130,7 @@ let {ocaml} harness_string_of_elf32_dynamic_section f1 bs0 os_additional_ranges 
 val harness_string_of_elf64_dyn_entry : bool -> elf64_dyn -> (natural -> bool) -> (natural -> string) ->
   (elf64_dyn -> string_table -> error elf64_dyn_value) ->
     (elf64_dyn -> string_table -> error elf64_dyn_value) -> string_table -> string
-let {ocaml} harness_string_of_elf64_dyn_entry shared_object dyn os_additional_ranges typ os_dyn proc_dyn stbl =
+let {ocaml; lean} harness_string_of_elf64_dyn_entry shared_object dyn os_additional_ranges typ os_dyn proc_dyn stbl =
   let tag = unsafe_hex_string_of_natural 16 (naturalFromInteger (integer_of_elf64_sxword dyn.elf64_dyn_tag)) in
   let typ = "(" ^ typ (naturalFromInteger (integer_of_elf64_sxword dyn.elf64_dyn_tag)) ^ ")" in
   let vlu =
@@ -1159,7 +1160,7 @@ val harness_string_of_elf64_dynamic_section' : elf64_file -> elf64_program_heade
     (natural -> error tag_correspondence) -> (natural -> string) ->
       (elf64_dyn -> string_table -> error elf64_dyn_value) ->
         (elf64_dyn -> string_table -> error elf64_dyn_value) -> string
-let {ocaml} harness_string_of_elf64_dynamic_section' f1 dyn bs0 os_additional_ranges os proc os_print os_dyn proc_dyn =
+let {ocaml; lean} harness_string_of_elf64_dynamic_section' f1 dyn bs0 os_additional_ranges os proc os_print os_dyn proc_dyn =
   let endian = get_elf64_header_endianness f1.elf64_file_header in
   let sht = f1.elf64_file_section_header_table in
   let off = natural_of_elf64_off dyn.elf64_p_offset in
@@ -1189,7 +1190,7 @@ val harness_string_of_elf64_dynamic_section : elf64_file -> byte_sequence ->
     (natural -> error tag_correspondence) -> (natural -> string) ->
       (elf64_dyn -> string_table -> error elf64_dyn_value) ->
         (elf64_dyn -> string_table -> error elf64_dyn_value) -> string
-let {ocaml} harness_string_of_elf64_dynamic_section f1 bs0 os_additional_ranges os proc os_print os_dyn proc_dyn =
+let {ocaml; lean} harness_string_of_elf64_dynamic_section f1 bs0 os_additional_ranges os proc os_print os_dyn proc_dyn =
   let pht = f1.elf64_file_program_header_table in
   let print_msg = is_elf64_shared_object_file f1.elf64_file_header ||
     is_elf64_executable_file f1.elf64_file_header

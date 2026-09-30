@@ -1147,7 +1147,7 @@ let get_elf64_file_global_symbol_init f3 =
   * [pht_bdl] and [sht_bdl].
   *)
 val string_of_elf32_file : hdr_print_bundle -> pht_print_bundle -> sht_print_bundle -> elf32_file -> string
-let {ocaml} string_of_elf32_file hdr_bdl pht_bdl sht_bdl f3 =
+let {ocaml; lean} string_of_elf32_file hdr_bdl pht_bdl sht_bdl f3 =
   match get_elf32_file_section_header_string_table f3 with
     | Fail err ->
       unlines [
@@ -1173,7 +1173,7 @@ let {ocaml} string_of_elf32_file hdr_bdl pht_bdl sht_bdl f3 =
   * [pht_bdl] and [sht_bdl].
   *)
 val string_of_elf64_file : hdr_print_bundle -> pht_print_bundle -> sht_print_bundle -> elf64_file -> string
-let {ocaml} string_of_elf64_file hdr_bdl pht_bdl sht_bdl f3 =
+let {ocaml; lean} string_of_elf64_file hdr_bdl pht_bdl sht_bdl f3 =
   match get_elf64_file_section_header_string_table f3 with
     | Fail err ->
       unlines [

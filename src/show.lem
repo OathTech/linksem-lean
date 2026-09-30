@@ -11,6 +11,7 @@ open import String_extra
 
 open import {hol} `ASCIInumbersTheory`
 open import {hol} `elf_localTheory`
+declare {lean} extra_import `Ml_bindings`
 
 class (Show 'a)
   val show : 'a -> string
@@ -110,6 +111,7 @@ val string_of_nat : nat -> string
   end
   *)
 declare ocaml    target_rep function string_of_nat = `Stdlib.string_of_int`
+declare lean     target_rep function string_of_nat = `Nat.repr`
 declare isabelle target_rep function string_of_nat = `LemExtraDefs.nat_to_string`
 declare hol      target_rep function string_of_nat = `num_to_dec_string`
 
@@ -124,6 +126,7 @@ end
 val string_of_integer : integer -> string
 
 declare ocaml    target_rep function string_of_integer = `Nat_big_num.to_string`
+declare lean     target_rep function string_of_integer = `Ml_bindings.string_of_integer`
 declare isabelle target_rep function string_of_integer = `LemExtraDefs.int_to_string`
 declare hol      target_rep function string_of_integer = `int_to_dec_string`
 

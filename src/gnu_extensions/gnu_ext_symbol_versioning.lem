@@ -91,7 +91,7 @@ type gnu_ext_elf64_verdef =
    |>
 
 val string_of_gnu_ext_elf32_verdef : gnu_ext_elf32_verdef -> string
-let {ocaml} string_of_gnu_ext_elf32_verdef verdef =
+let {ocaml; lean} string_of_gnu_ext_elf32_verdef verdef =
   unlines [
     "Version: " ^ show verdef.gnu_ext_elf32_vd_version
   ; "Flags: " ^ show verdef.gnu_ext_elf32_vd_flags
@@ -101,7 +101,7 @@ let {ocaml} string_of_gnu_ext_elf32_verdef verdef =
   ]
 
 val string_of_gnu_ext_elf64_verdef : gnu_ext_elf64_verdef -> string
-let {ocaml} string_of_gnu_ext_elf64_verdef verdef =
+let {ocaml; lean} string_of_gnu_ext_elf64_verdef verdef =
   unlines [
     "Version: " ^ show verdef.gnu_ext_elf64_vd_version
   ; "Flags: " ^ show verdef.gnu_ext_elf64_vd_flags
@@ -259,7 +259,7 @@ type gnu_ext_elf64_vernaux =
    |>
 
 val string_of_gnu_ext_elf32_vernaux : gnu_ext_elf32_vernaux -> string
-let {ocaml} string_of_gnu_ext_elf32_vernaux vernaux =
+let {ocaml; lean} string_of_gnu_ext_elf32_vernaux vernaux =
   unlines [
     "Hash: " ^ show vernaux.gnu_ext_elf32_vna_hash
   ; "Flags: " ^ show vernaux.gnu_ext_elf32_vna_flags
@@ -269,7 +269,7 @@ let {ocaml} string_of_gnu_ext_elf32_vernaux vernaux =
   ]
 
 val string_of_gnu_ext_elf64_vernaux : gnu_ext_elf64_vernaux -> string
-let {ocaml} string_of_gnu_ext_elf64_vernaux vernaux =
+let {ocaml; lean} string_of_gnu_ext_elf64_vernaux vernaux =
   unlines [
     "Hash: " ^ show vernaux.gnu_ext_elf64_vna_hash
   ; "Flags: " ^ show vernaux.gnu_ext_elf64_vna_flags
@@ -373,6 +373,7 @@ let gnu_ext_verdef_base_versioned : natural = 2
 (* TODO: borrowed from Dwarf, this should probbaly go somewhere else *)
 val natural_nat_shift_right : natural -> nat -> natural
 declare ocaml target_rep function natural_nat_shift_right = `Nat_big_num.shift_right`
+declare lean     target_rep function natural_nat_shift_right = `Nat.shiftRight`
 
 val obtain_gnu_ext_elf64_interpreted_versym_table_symbols : endianness -> elf64_file -> list (natural * elf64_dyn_value) -> error (maybe (list gnu_ext_interpreted_versym_entry))
 let obtain_gnu_ext_elf64_interpreted_versym_table_symbols endian f dyns =

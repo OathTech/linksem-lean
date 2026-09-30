@@ -176,6 +176,20 @@ hol-extraction:
 	mv */*Script.sml ../auto_generated/hol-kananaskis-10/
 	mv */*/*Script.sml ../auto_generated/hol-kananaskis-10/
 
+# Lean 4 extraction (lem-lean's Lean backend). Same module list and the same
+# native byte-sequence implementation as the OCaml build; the hand-written
+# Lean twins of the OCaml helpers live in ../lean/handwritten. Output is
+# ../lean/generated (build with `lake build` in ../lean).
+LEAN_GEN_DIR ?= ../lean/generated
+LEM_LEAN_SRC := $(LEM_UTIL_SRC) $(LEM_ELF_SRC) $(LEM_ABI_SRC) $(LEM_LINK_SRC) main_elf.lem main_link.lem
+
+.PHONY: lean-extraction
+lean-extraction:
+	cp byte_sequence_ocaml.lem byte_sequence_impl.lem
+	mkdir -p $(LEAN_GEN_DIR)
+	$(LEM) -wl ign -lean -outdir $(LEAN_GEN_DIR) $(LEM_LEAN_SRC) byte_sequence_impl.lem
+	../lean/gen-roots.sh
+
 .PHONY: coq-extraction
 coq-extraction:
 	cp byte_sequence_generic.lem byte_sequence_impl.lem

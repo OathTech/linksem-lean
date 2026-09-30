@@ -638,9 +638,13 @@ let rec cook_argv acc args =
       | something :: more -> cook_argv (acc ++ [something]) more
     end
 
-val command_line : unit -> interpreted_command_line
-let {ocaml} command_line = fun _ -> (
-    let cooked_argv = cook_argv [] (tail argv)
+(** [command_line_of_args args] interprets the arguments [args] (argv
+  * without the program name). Split out of [command_line] (unchanged
+  * behaviour) so that targets without [argv] (Lean) can share it.
+  *)
+val command_line_of_args : list string -> interpreted_command_line
+let command_line_of_args args = (
+    let cooked_argv = cook_argv [] args
     in
     (* Now we use our fold-alike. *)
     match foldl_suffix read_one_arg initial_state cooked_argv with
@@ -648,3 +652,6 @@ let {ocaml} command_line = fun _ -> (
         | _ -> failwith "no command state left"
     end
 )
+
+val command_line : unit -> interpreted_command_line
+let {ocaml} command_line = fun _ -> command_line_of_args (tail argv)

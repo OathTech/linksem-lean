@@ -81,6 +81,7 @@ let r_mips_jump_slot : natural = 127
 (* TODO: borrowed from Dwarf, this should probbaly go somewhere else *)
 val natural_nat_shift_right : natural -> nat -> natural
 declare ocaml target_rep function natural_nat_shift_right = `Nat_big_num.shift_right`
+declare lean     target_rep function natural_nat_shift_right = `Nat.shiftRight`
 
 let byte_mask : natural = natural_of_hex "0xFF"
 
