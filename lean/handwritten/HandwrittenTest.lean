@@ -66,6 +66,8 @@ end bytes
 #guard Ml_bindings.string_index_of_from 'h' 6 "hello" == none
 #guard Ml_bindings.string_of_unix_time 0 == "1970-01-01T00:00:00"
 #guard Ml_bindings.string_of_unix_time 1700000000 == "2023-11-14T22:13:20"
+-- F11 (fixed): exact beyond gmtime's range (OCaml output of the fixed ml_bindings.ml)
+#guard Ml_bindings.string_of_unix_time (2 ^ 70) == "37411459154216-09-30T16:17:04"
 
 -- filesystem path helpers (filesystem_wrapper.ml)
 #guard Filesystem_wrapper.dirname "/usr/lib/libc.so" == "/usr/lib"
