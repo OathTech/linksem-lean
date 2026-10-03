@@ -223,7 +223,7 @@ let elf64_file_of_elf_memory_image a make_concrete fname img =
         | true
     ]
     in
-    let symtab =
+    let symtab_in_image_order =
         (* Get all the symbols *)
         elf64_null_symbol_table_entry :: [
                 match tag with
@@ -283,6 +283,18 @@ let elf64_file_of_elf_memory_image a make_concrete fname img =
             | forall ((maybe_range, tag) MEM (zip symbol_ranges symbol_tags))
             | true
         ]
+    in
+    (* Claude: the ELF symbol table lists all LOCAL symbols before the others, and its
+     * section header's sh_info is the index of the first non-local one
+     * (previously the output interleaved them and set sh_info = 0, which
+     * readelf flags). A stable partition keeps the null entry (binding
+     * LOCAL) first. *)
+    let (symtab_locals, symtab_nonlocals) = List.partition
+        (fun ent -> get_elf64_symbol_binding ent = stb_local) symtab_in_image_order
+    in
+    let symtab = symtab_locals ++ symtab_nonlocals
+    in
+    let symtab_first_nonlocal = length symtab_locals
     in
     (*let _ = errln ("Building an ELF file from" ^ (show (length element_section_tag_pairs_sorted_by_address)) ^ " sections")
     in*)
@@ -377,7 +389,7 @@ let elf64_file_of_elf_memory_image a make_concrete fname img =
            ; elf64_section_offset    = symoff
            ; elf64_section_size      = symsz
            ; elf64_section_link      = 1 + (length user_sections_sorted_with_offsets) + 2
-           ; elf64_section_info      = 0
+           ; elf64_section_info      = symtab_first_nonlocal
            ; elf64_section_align = 8
            ; elf64_section_entsize   = 24
            ; elf64_section_body = Byte_sequence.concat (List.map (bytes_of_elf64_symbol_table_entry endian) symtab)
