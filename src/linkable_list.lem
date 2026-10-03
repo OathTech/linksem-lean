@@ -181,6 +181,15 @@ let resolve_one_reference_default a linkables defmap ref_idx_and_ref_and_linkabl
     in
     let ref_is_weak = (get_elf64_symbol_binding ref.ref_syment) = stb_weak
     in
+    (* Claude: only a LOCAL symbol is resolved to itself; a local definition never
+     * satisfies another symbol's reference (previously an undefined
+     * `counter` could be bound to another file's `static int counter`, and
+     * COMMON and weak definitions were never unified with the other
+     * objects' definitions of the same name). *)
+    let ref_is_local = (get_elf64_symbol_binding ref.ref_syment) = stb_local
+    in
+    let def_is_local = (fun def -> (get_elf64_symbol_binding def.def_syment) = stb_local)
+    in
     let def_is_eligible = (fun (def_idx, def, def_linkable) ->
         let ref_is_unnamed = (ref.ref_symname = "")
         in
@@ -233,7 +242,15 @@ let resolve_one_reference_default a linkables defmap ref_idx_and_ref_and_linkabl
             | Nothing -> false
         end
         in
-        if ref_is_to_defined_or_common_symbol then def_sym_is_ref_sym
+        if ref_is_to_defined_or_common_symbol && ref_is_local then def_sym_is_ref_sym
+        else if def_sym_is_ref_sym then true
+        else if def_is_local def then false
+        else if ref_is_to_defined_or_common_symbol then
+            (* Claude: a global/weak/COMMON symbol the referencing object defines itself:
+             * the other objects' definitions compete with it (strong beats
+             * COMMON beats weak, below); archive members are not searched
+             * to override it *)
+            (not def_is_in_archive) || ref_and_def_are_in_same_archive
         else
             if ref_is_unnamed then false
             else
@@ -258,10 +275,22 @@ let resolve_one_reference_default a linkables defmap ref_idx_and_ref_and_linkabl
         | [(def_idx, def, def_linkable)] -> (Just def_idx, Just def, Just def_linkable)
         | (d_idx, d, d_l) :: more_pairs ->
             (* Break ties by
+             * - (Claude) strength: a strong definition beats a COMMON one, which beats a
+             *   weak one (the largest COMMON wins among COMMONs);
              * - putting defs in relocs (or --defsym or linker script, a.k.a. command line) ahead of defs in archives;
              * - else whichever definition appeared first in the left-to-right order.
              *)
+            let strength = (fun d ->
+                if natural_of_elf64_half d.def_syment.elf64_st_shndx = shn_common then (1 : nat)
+                else if get_elf64_symbol_binding d.def_syment = stb_weak then 2
+                else 0)
+            in
+            let common_size = (fun d -> natural_of_elf64_xword d.def_syment.elf64_st_size)
+            in
             let sorted = sortBy (fun (d_idx1, d1, (_, (_, _, (_, d_l1_coords)), _)) -> (fun (d_idx2, d2, (_, (_, _, (_, d_l2_coords)), _)) ->
+                if strength d1 <> strength d2 then strength d1 < strength d2
+                else if strength d1 = 1 && common_size d1 <> common_size d2 then common_size d1 > common_size d2
+                else
                 match (d_l1_coords, d_l2_coords) with
                       (InCommandLine(_) :: _, InCommandLine(_) :: _) -> d_idx1 < d_idx2
                     | (InCommandLine(_) :: _, _)                     -> (* command-line wins *) true
