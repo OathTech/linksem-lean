@@ -14,6 +14,9 @@ require LemLib from git "https://github.com/OathTech/lem-lean" @ "77ad4facfc6081
     between the markers; do not edit by hand. -/
 def generatedModules : Array Lean.Name := #[
 -- BEGIN generated module list
+  `Abi_aarch64_dynamic,
+  `Abi_aarch64_encodings_for_pkvm_alternatives,
+  `Abi_aarch64_instruction_fields,
   `Abi_aarch64_le,
   `Abi_aarch64_le_elf_header,
   `Abi_aarch64_le_serialisation,
@@ -21,6 +24,7 @@ def generatedModules : Array Lean.Name := #[
   `Abi_aarch64_relocation,
   `Abi_aarch64_section_header_table,
   `Abi_aarch64_symbol_table,
+  `Abi_aarch64_symbolic_relocation,
   `Abi_amd64,
   `Abi_amd64_elf_header,
   `Abi_amd64_program_header_table,
@@ -54,6 +58,7 @@ def generatedModules : Array Lean.Name := #[
   `Abi_riscv_section_header_table,
   `Abi_riscv_serialisation,
   `Abi_riscv_symbol_table,
+  `Abi_symbolic_relocation,
   `Abi_utilities,
   `Abi_x86_relocation,
   `Abis,
@@ -68,7 +73,9 @@ def generatedModules : Array Lean.Name := #[
   `Default_printing,
   `Dump_image,
   `Dwarf,
+  `Dwarf_byte_sequence,
   `Dwarf_ctypes,
+  `Dwarf_expr_encode,
   `Elf64_file_of_elf_memory_image,
   `Elf_dynamic,
   `Elf_file,
@@ -82,10 +89,12 @@ def generatedModules : Array Lean.Name := #[
   `Elf_relocation,
   `Elf_section_header_table,
   `Elf_symbol_table,
+  `Elf_symbolic,
   `Elf_types_native_uint,
   `Endianness,
   `Error,
   `Filesystem,
+  `Generated_arm64_cpucaps,
   `Gnu_ext_abi,
   `Gnu_ext_dynamic,
   `Gnu_ext_note,
@@ -108,9 +117,15 @@ def generatedModules : Array Lean.Name := #[
   `Memory_image_orderings,
   `Missing_pervasives,
   `Multimap,
+  `Pkvm_alternatives,
+  `Pkvm_jump_table,
+  `Pkvm_relocations,
+  `Report_format,
   `Sail_interface,
   `Show,
   `String_table,
+  `Sym,
+  `Symbolic_resolution,
   `Test_image,
 -- END generated module list
 ]
@@ -119,7 +134,7 @@ def generatedModules : Array Lean.Name := #[
 lean_lib Handwritten where
   srcDir := "handwritten"
   roots := #[`Ml_bindings, `Uint32_wrapper, `Uint64_wrapper,
-             `Byte_sequence_wrapper, `Filesystem_wrapper]
+             `Byte_sequence_wrapper, `Filesystem_wrapper, `Sym_ocaml]
 
 /-- Build-time checks of the hand-written twins (building runs them). -/
 @[default_target]

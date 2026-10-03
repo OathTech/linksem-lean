@@ -3,18 +3,16 @@ Lean mirror of `src/uint32_wrapper.ml`. Same representation as the OCaml
 (an unbounded natural, kept reduced), same function names, so the Lem
 `declare lean target_rep` lines read like their `ocaml` twins.
 
-Reduction is modulo `max_int` = 2^32 - 1, exactly as upstream (which makes
-0xFFFFFFFF reduce to 0: an upstream bug our port cannot exercise, mirrored;
-findings F1, tray report).
+Reduction is modulo 2^32 (`modulus_`), as on this branch (first-port
+finding F1, fixed upstream).
 -/
 
 namespace Uint32_wrapper
 
 abbrev uint32 := Nat
 
-/-- uint32_wrapper.ml `max_int` = 2^32 - 1, the modulus of every operation
-    below (mirrored, F1). -/
-def modulus : Nat := 2 ^ 32 - 1
+/-- uint32_wrapper.ml `modulus_` = 2^32, the modulus of every operation below. -/
+def modulus : Nat := 2 ^ 32
 
 def add (l r : uint32) : uint32 := (l + r) % modulus
 

@@ -5,7 +5,8 @@ The Lean `main_elf`: the I/O shell around the generated `main_elf_run` /
 `main_elf_render` (src/main_elf.lem), mirroring the OCaml driver there
 (`let {ocaml} _ = ...`):
 
-* `argv` is `progname :: flag :: fname :: _`, else `failwith "usage: ..."`;
+* `--help` prints `usage_text` to stdout; `flag :: fname :: _` runs;
+  anything else prints `usage_text` to stderr; exit status 0 throughout;
 * `Byte_sequence.acquire fname` (an OCaml Sys_error on a missing file is an
   uncaught exception: here `acquire` panics);
 * `Left err` goes to stderr with `errln`, `Right out` to stdout with `outln`;
@@ -27,6 +28,9 @@ that is not valid UTF-8 cannot be opened (OCaml can); it fails loudly.
 def main (args : List String) : IO UInt32 := do
   lemRequireAbortOnPanic
   match args with
+  | "--help" :: _ =>
+    Ml_bindings.writeString (← IO.getStdout) usage_text true
+    return 0
   | flag :: fname :: _ =>
     match Byte_sequence_wrapper.acquire fname with
     | .Fail e =>
@@ -37,5 +41,5 @@ def main (args : List String) : IO UInt32 := do
       | .inl err => Ml_bindings.writeString (← IO.getStderr) err true; return 0
       | .inr out => Ml_bindings.writeString (← IO.getStdout) out true; return 0
   | _ =>
-    IO.eprintln "Fatal error: exception Failure(\"usage: main_elf <flag> <fname>\")"
-    return 2
+    Ml_bindings.writeString (← IO.getStderr) usage_text true
+    return 0

@@ -1,7 +1,7 @@
 /-
 Lean mirror of `src/uint64_wrapper.ml` (unbounded natural kept reduced,
-same function names). Reduction is modulo `max_int` = 2^64 - 1, exactly as
-upstream (an upstream bug our port cannot exercise, mirrored; findings F1).
+same function names). Reduction is modulo 2^64
+(`modulus_`), as on this branch (first-port finding F1, fixed upstream).
 `logxor` has no upstream counterpart: `elf64_xword_lxor`'s OCaml rep names
 `Uint64_wrapper.logxor`, which upstream does not define (findings F3, never
 reached); the Lean rep needs a definition to compile.
@@ -11,9 +11,8 @@ namespace Uint64_wrapper
 
 abbrev uint64 := Nat
 
-/-- uint64_wrapper.ml `max_int` = 2^64 - 1, the modulus of every operation
-    below (mirrored, F1). -/
-def modulus : Nat := 2 ^ 64 - 1
+/-- uint64_wrapper.ml `modulus_` = 2^64, the modulus of every operation below. -/
+def modulus : Nat := 2 ^ 64
 
 def add (l r : uint64) : uint64 := (l + r) % modulus
 

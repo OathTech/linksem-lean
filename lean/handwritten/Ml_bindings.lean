@@ -7,16 +7,14 @@ Lean `String` (Unicode scalars) where OCaml has bytes: identical on ASCII,
 which is all the model feeds these (LemLib limitation "strings are not yet
 bytes").
 
-Deliberate divergences from the OCaml original are fixes made on BOTH
-sides (lean/docs/2026-09-28_upstream-findings.md):
-  F2 `bytes_of_int32`/`bytes_of_int64` were `assert false`;
-  F5 the `hex_string_of_big_int_*` family went through
-     `Nat_big_num.to_int64` and raised on values >= 2^63.
+The `hex_string_of_big_int_*` family follows this branch's `hex_of_big_int`
+(repeated division: values >= 2^63 work; first-port finding F5, fixed
+upstream).
 -/
 
 namespace Ml_bindings
 
-/-! ## Hexadecimal rendering (ml_bindings.ml:17-65, F5-fixed) -/
+/-! ## Hexadecimal rendering (ml_bindings.ml `hex_of_big_int` and its users) -/
 
 private def hexDigits (n : Nat) : String := String.ofList (Nat.toDigits 16 n)
 
@@ -79,6 +77,17 @@ def string_prefix (index : Nat) (str : String) : Option String :=
 def string_index_of (c : Char) (s : String) : Option Nat :=
   let p := s.find c
   if p == s.endPos then none else some (s.extract s.startPos p).length
+
+/-- ml_bindings.ml `string_index_of_from`: the index of the first `c` at or
+    after `i`; `None` if `i > length s` or there is none. -/
+def string_index_of_from (c : Char) (i : Nat) (s : String) : Option Nat :=
+  if i > s.length then none
+  else (string_index_of c (s.drop i).toString).map (· + i)
+
+/-- ml_bindings.ml `string_sub`: the `n` characters from `i`, or `None` if
+    that range does not lie within `s`. -/
+def string_sub (i n : Nat) (s : String) : Option String :=
+  if i + n > s.length then none else some ((s.drop i).take n).toString
 
 private def isPrefixOfList : List Char → List Char → Bool
   | [], _ => true
@@ -181,7 +190,7 @@ def list_index_big_int {α : Type} : Nat → List α → Option α
 
 def nat_big_num_of_uint64 (x : Nat) : Nat := x
 
-/-- `Unix.gmtime` of a POSIX timestamp, printed `%i-%i-%iT%02i:%02i:%02i`
+/-- `Unix.gmtime` of a POSIX timestamp, printed `%i-%02i-%02iT%02i:%02i:%02i`
     (ml_bindings.ml:6). Civil-from-days after H. Hinnant; timestamps are
     naturals, so only the proleptic-Gregorian forward direction is needed. -/
 def string_of_unix_time (tm : Nat) : String :=
@@ -198,7 +207,7 @@ def string_of_unix_time (tm : Nat) : String :=
   let m := if mp < 10 then mp + 3 else mp - 9
   let y := if m ≤ 2 then y + 1 else y
   let p2 (n : Nat) : String := padZeros 2 (toString n)
-  s!"{y}-{m}-{d}T{p2 (secs / 3600)}:{p2 (secs % 3600 / 60)}:{p2 (secs % 60)}"
+  s!"{y}-{p2 m.toNat}-{p2 d.toNat}T{p2 (secs / 3600)}:{p2 (secs % 3600 / 60)}:{p2 (secs % 60)}"
 
 /-! ## Console output from pure code
 
