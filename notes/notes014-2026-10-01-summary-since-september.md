@@ -61,3 +61,16 @@ Alongside: a speculative experiment on exporting the Lem model to Lean with
 the lem-lean fork (recorded in read-dwarf-private3's `notes035`), and the
 read-dwarf changes that followed each linksem step
 (`read-dwarf/notes/notes003-2026-10-01-summary-since-september.md`).
+
+7. **A Lean port** (3 October; Claude, for M. Dodds of OathTech;
+   `notes015`, `notes016`): the Lem model compiled to Lean 4 by the
+   lem-lean fork's Lean backend, with hand-written Lean twins of the OCaml
+   helpers (`lean/`), moved onto this branch from an earlier port on
+   `master`.  Lean target representations beside the OCaml ones and the
+   `main_elf` driver split (`b783f20`, OCaml output unchanged), the `lean/`
+   project (`abd06f1`), and five fixes carried over from the earlier port,
+   one commit each: F10 (`b20c8fe`), F11 (`9619733`), F13 (`9929a3f`), F14
+   (`a4ac199`), F17 (`45556aa`).  The OCaml and Lean `main_elf` agree on
+   21,987 of 24,255 corpus cases, and both fail on 2,255 more (two 4 GiB
+   files among them, over the per-run memory cap); the 13 mismatches are
+   one backend issue (a binding evaluated by OCaml but not by Lean).

@@ -219,3 +219,21 @@ those for `validation/dwarf-expr` in its `notes/`.
 
 98. (2026-10-01 06:43)  Earlier, when looking at one part of the validation work, I asked you to make two notes, one containing the general instructions applying to all this work, and a verbatim record of all the relevant prompts.  Those are in linksem/validation/dwarf/notes/{notes001,notes002}.  Now do the same, but for all the work done since 2026-09-01.  And write a brief summary of all of that work.  Do this both for the changes to linksem, putting those notes in linksem/notes, and, separately, for the changes to read-dwarf, putting those changes in read-dwarf/notes/
 
+## Lean port (M. Dodds)
+
+Claude: the prompts of M. Dodds (OathTech) that led to the Lean port on
+this branch (`notes015`), verbatim and in order; times are UTC.  Bracketed
+remarks are Claude's.  Prompts that only acknowledged a step or concerned
+the operator's machine are omitted, as are those about the first port on
+`master` (recorded with it, on OathTech/linksem-lean).
+
+99. (2026-10-03 01:12) I got a useful steer from one of the linksem devs: [Claude: a forwarded private email from the owner, 1 October 2026, not reproduced here; it pointed the port at this branch and asked that the instructions in notes013 be followed, and notes012 and notes014 maintained]
+
+100. (2026-10-03 01:29) We won't be able to work the way he does (we don't have him available). I propose a hybrid where we treat his work as the upstream, and try to keep the records that he wants. But we won't record his decisions - we can't. My approach to working also tends to be more hands-off iterate-fix than PS. You can log my calls as MDD rather than USER, and update past decisions accordingly too (I'm Mike Dodds fwiw). Does this give us a clear path forward? Propose a compromise working strategy that doesn't require PS to decide things in the loop
+
+101. (2026-10-03 01:32) Agree, this is a good approach. I can pull the Dwarf validation suite. give me the right command.
+
+102. (2026-10-03 01:45) yes, you can start the rebuild too
+
+103. (2026-10-03 03:14) Great, go ahead as you propose [Claude: the proposal was to re-apply the first port's fixes F10, F11, F13, F14 and F17, one commit each, then run the full OCaml-vs-Lean differential once]
+
