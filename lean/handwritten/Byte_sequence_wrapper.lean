@@ -70,14 +70,25 @@ def find_byte (bs : byte_sequence) (b : UInt8) : Option Nat :=
     | fuel + 1 => if get bs i == b then some i else go (i + 1) fuel
   go 0 bs.len
 
-def make (len : Nat) (c : UInt8) : byte_sequence :=
-  of_bytes ⟨Array.replicate len c⟩
+/-- Written byte by byte into a buffer of the final size: building an
+    `Array UInt8` first (boxed, 8 bytes per element) and converting it took
+    about 10x the sequence's size at peak. -/
+def make (len : Nat) (c : UInt8) : byte_sequence := Id.run do
+  let mut b := ByteArray.emptyWithCapacity len
+  for _ in [0:len] do b := b.push c
+  return of_bytes b
 
+/-- One buffer of the total size, each window copied into it in place
+    (`exact := false`: no reallocation within the capacity). Appending with
+    the default `exact := true` reallocated and copied the growing result
+    for every piece; `bytes_of_elf64_file` on a 4 GiB file peaked at 46 GB. -/
 def concat : List byte_sequence → byte_sequence
   | [] => empty
   | [bs] => bs
   | l =>
-    of_bytes (l.foldl (fun acc bs => bs.bytes.copySlice bs.start acc acc.size bs.len) ByteArray.empty)
+    let total := l.foldl (fun n bs => n + bs.len) 0
+    of_bytes (l.foldl (fun acc bs => bs.bytes.copySlice bs.start acc acc.size bs.len false)
+      (ByteArray.emptyWithCapacity total))
 
 /-- byte_sequence_wrapper.ml `zero_pad_to_length`, mirrored as upstream
     has it (findings F6): `pad = bs.len - len`; when positive, `pad` ASCII
@@ -95,7 +106,9 @@ def to_char_list (bs : byte_sequence) : List Char :=
 def to_byte_list (bs : byte_sequence) : List UInt8 :=
   (List.range bs.len).map fun i => get bs i
 
-def from_char_list (l : List UInt8) : byte_sequence := of_bytes ⟨l.toArray⟩
+/-- Pushed into a buffer of the final size (no intermediate boxed array). -/
+def from_char_list (l : List UInt8) : byte_sequence :=
+  of_bytes (l.foldl (fun b c => b.push c) (ByteArray.emptyWithCapacity l.length))
 
 /-- byte_sequence_wrapper.ml `compare`, sign convention included: the result
     is `bs2 - bs1` (by length, then by the first differing byte), so the

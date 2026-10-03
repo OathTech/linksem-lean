@@ -31,6 +31,12 @@ open Byte_sequence_wrapper
 #guard (match dropbytes 4 (from_char_list [1, 2, 3]) with
         | .Success _ => false | .Fail _ => true)
 #guard find_byte (from_char_list [5, 6, 7]) 7 == some 2
+-- construction straight into a sized buffer (make, from_char_list, concat)
+#guard to_byte_list (make 3 7) == [7, 7, 7]
+#guard to_byte_list (make 0 7) == []
+#guard to_byte_list (from_char_list []) == []
+#guard to_byte_list (concat [{ from_char_list [9, 1, 9] with start := 1, len := 1 }, empty,
+        from_char_list [2, 3], { from_char_list [4, 5, 6] with start := 2, len := 1 }]) == [1, 2, 3, 6]
 end bytes
 
 -- arithmetic modulo 2^N (F1, fixed on this branch)

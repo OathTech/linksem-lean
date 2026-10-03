@@ -101,3 +101,30 @@ boxed `Array` is the first suspect (not yet confirmed).
 - `lean/generated/` (the Lem output, not committed) sits beside the sources;
   `notes013` asks for generated files under an `output/` or `build/`
   directory.
+
+## Addendum (3 October): the Lean memory overhead, resolved
+
+Claude: the first open item above was in the port's byte-sequence twin
+(`lean/handwritten/Byte_sequence_wrapper.lean`), not in the model.
+`--section-headers` reaches `bytes_of_elf64_file` (through
+`get_elf64_file_section_header_string_table`), which re-serialises the
+whole file; the twin's `concat` reallocated and copied the growing result
+for every piece, and its `make` and `from_char_list` built a boxed
+`Array UInt8` (8 bytes per byte) before the `ByteArray`.  They now write
+into one buffer of the final size.  Peak memory, measured per operation
+on a 1 GiB file (`acquire` alone: 1.06 GB):
+
+| Operation                   | Before  | After  |
+|-----------------------------|---------|--------|
+| `concat` of 5 windows       | 4.2 GB  | 2.1 GB |
+| `make` of 1 GiB             | 10.5 GB | 2.1 GB |
+
+and for `main_elf --section-headers` (output byte-identical to OCaml's):
+
+| Input                                        | OCaml   | Lean before | Lean after |
+|----------------------------------------------|---------|-------------|------------|
+| 1 GiB section added to a small object        | 3.2 GB  | 8.4 GB      | 2.1 GB     |
+| elfutils `testfile-dwp-4-cu-index-overflow.dwp` (4 GiB) | 12.6 GB | 46 GB | 8.4 GB |
+
+With a 24G cap both 4 GiB elfutils files now agree on every flag except
+`--in-out` (a hex dump of the whole file), where both sides exceed the cap.
