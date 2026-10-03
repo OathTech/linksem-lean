@@ -133,6 +133,7 @@ let sym_bs_length bs =
 
 val print_endline : string -> unit
 declare ocaml target_rep function print_endline = `print_endline`
+declare lean     target_rep function print_endline = `Ml_bindings.outln`
 (* 
 let symbolic_bytes_in_range off len bs =
   let _ = print_endline "slow operation" in

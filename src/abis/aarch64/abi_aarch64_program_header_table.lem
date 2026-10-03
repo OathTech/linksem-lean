@@ -16,7 +16,7 @@ let abi_aarch64_pt_unwind  : natural = (939524096 * 2) + 1 (* 0x70000001 *)
   * an AARCH64 ABI segment type.
   *)
 val string_of_abi_aarch64_segment_type : natural -> string
-let {ocaml} string_of_abi_aarch64_segment_type m =
+let {ocaml; lean} string_of_abi_aarch64_segment_type m =
   if m = abi_aarch64_pt_archext then
     "ARCHEXT"
   else if m = abi_aarch64_pt_unwind then

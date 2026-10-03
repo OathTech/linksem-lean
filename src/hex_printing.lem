@@ -16,26 +16,35 @@ val hex_string_of_big_int_no_padding : natural -> string
 let hex_string_of_big_int_no_padding = hex_string_of_natural
 val hex_string_of_big_int_no_padding' : integer -> string
 declare ocaml target_rep function hex_string_of_big_int_no_padding' = `Ml_bindings.hex_string_of_big_int_no_padding`
+declare lean     target_rep function hex_string_of_big_int_no_padding' = `Ml_bindings.hex_string_of_big_int_no_padding`
 val hex_string_of_big_int_pad2 : natural -> string
 declare ocaml target_rep function hex_string_of_big_int_pad2 = `Ml_bindings.hex_string_of_big_int_pad2`
+declare lean     target_rep function hex_string_of_big_int_pad2 = `Ml_bindings.hex_string_of_big_int_pad2`
 val hex_string_of_big_int_pad4 : natural -> string
 declare ocaml target_rep function hex_string_of_big_int_pad4 = `Ml_bindings.hex_string_of_big_int_pad4`
+declare lean     target_rep function hex_string_of_big_int_pad4 = `Ml_bindings.hex_string_of_big_int_pad4`
 val hex_string_of_big_int_pad5 : natural -> string
 declare ocaml target_rep function hex_string_of_big_int_pad5 = `Ml_bindings.hex_string_of_big_int_pad5`
+declare lean     target_rep function hex_string_of_big_int_pad5 = `Ml_bindings.hex_string_of_big_int_pad5`
 val hex_string_of_big_int_pad6 : natural -> string
 declare ocaml target_rep function hex_string_of_big_int_pad6 = `Ml_bindings.hex_string_of_big_int_pad6`
+declare lean     target_rep function hex_string_of_big_int_pad6 = `Ml_bindings.hex_string_of_big_int_pad6`
 val hex_string_of_big_int_pad7 : natural -> string
 declare ocaml target_rep function hex_string_of_big_int_pad7 = `Ml_bindings.hex_string_of_big_int_pad7`
+declare lean     target_rep function hex_string_of_big_int_pad7 = `Ml_bindings.hex_string_of_big_int_pad7`
 val hex_string_of_big_int_pad8 : natural -> string
 declare ocaml target_rep function hex_string_of_big_int_pad8 = `Ml_bindings.hex_string_of_big_int_pad8`
+declare lean     target_rep function hex_string_of_big_int_pad8 = `Ml_bindings.hex_string_of_big_int_pad8`
 val hex_string_of_big_int_pad16 : natural -> string
 declare ocaml target_rep function hex_string_of_big_int_pad16 = `Ml_bindings.hex_string_of_big_int_pad16`
+declare lean     target_rep function hex_string_of_big_int_pad16 = `Ml_bindings.hex_string_of_big_int_pad16`
 
 val hex_string_of_nat_pad2 : nat -> string
 declare ocaml target_rep function hex_string_of_nat_pad2 = `Ml_bindings.hex_string_of_nat_pad2`
+declare lean     target_rep function hex_string_of_nat_pad2 = `Ml_bindings.hex_string_of_nat_pad2`
 
 val unsafe_hex_string_of_natural : nat -> natural -> string
-let {ocaml} unsafe_hex_string_of_natural pad m =
+let {ocaml; lean} unsafe_hex_string_of_natural pad m =
   if pad = 2 then
     hex_string_of_big_int_pad2 m
   else if pad = 5 then
@@ -59,14 +68,14 @@ let {ocaml} unsafe_hex_string_of_natural pad m =
   * [LOOS+], [LOPROC+] and [LOUSER+] section type names.
   *)
 val unsafe_hex_string_of_natural_alternate : natural -> string
-let {ocaml} unsafe_hex_string_of_natural_alternate m =
+let {ocaml; lean} unsafe_hex_string_of_natural_alternate m =
   if m = 0 then
     "0"
   else
     "0x" ^ unsafe_hex_string_of_natural 0 m
 
 val unsafe_hex_string_of_uc_list : list unsigned_char -> string
-let rec {ocaml} unsafe_hex_string_of_uc_list xs =
+let rec {ocaml; lean} unsafe_hex_string_of_uc_list xs =
   match xs with
     | []       -> ""
     | x::y::xs ->

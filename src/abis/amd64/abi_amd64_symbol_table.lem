@@ -14,7 +14,7 @@ open import Gnu_ext_abi
   * of AMD64 symbol type [m].
   *)
 val string_of_abi_amd64_symbol_type : natural -> string
-let {ocaml} string_of_abi_amd64_symbol_type m =
+let {ocaml; lean} string_of_abi_amd64_symbol_type m =
   if m = stt_gnu_ifunc then
     "GNU_IFUNC"
   else

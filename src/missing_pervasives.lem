@@ -12,6 +12,7 @@ open import {isabelle} `$ISABELLE_HOME/src/HOL/Word/Word`
 open import {isabelle} `Elf_Types_Local`
 open import {coq} `elf_types_local`
 open import {hol} `elf_localTheory`
+declare {lean} extra_import `Ml_bindings`
 
 val naturalZero : natural
 let naturalZero = 0
@@ -24,12 +25,14 @@ let id x = x
 type byte
 
 declare ocaml    target_rep type byte = `char`
+declare lean     target_rep type byte = `UInt8`
 declare isabelle target_rep type byte = `Elf_Types_Local.byte`
 declare hol      target_rep type byte = `word8`
 declare coq      target_rep type byte = `elf_types_local.byte`
 val natural_of_byte : byte -> natural
 
 declare ocaml    target_rep function natural_of_byte x = `Nat_big_num.of_int` (`Char.code` x)
+declare lean     target_rep function natural_of_byte x = `UInt8.toNat` x
 declare isabelle target_rep function natural_of_byte = `unat`
 declare hol      target_rep function natural_of_byte = `w2n`
 declare coq      target_rep function natural_of_byte = `nat_of_byte`
@@ -47,6 +50,7 @@ end
 val char_of_byte : byte -> char
 
 declare ocaml    target_rep function char_of_byte x = ``x
+declare lean     target_rep function char_of_byte x = `Ml_bindings.char_of_byte` x
 declare isabelle target_rep function char_of_byte = `Elf_Types_Local.char_of_unsigned_char`
 declare hol      target_rep function char_of_byte = `CHR` `o` `w2n`
 declare coq      target_rep function char_of_byte = `char_of_byte`
@@ -54,6 +58,7 @@ declare coq      target_rep function char_of_byte = `char_of_byte`
 val byte_of_char : char -> byte
 
 declare ocaml    target_rep function byte_of_char x = ``x
+declare lean     target_rep function byte_of_char x = `Ml_bindings.byte_of_char` x
 declare isabelle target_rep function byte_of_char = `Elf_Types_Local.unsigned_char_of_char`
 declare coq      target_rep function byte_of_char = `byte_of_char`
 declare hol      target_rep function byte_of_char = `n2w` `o` `ORD`
@@ -158,6 +163,7 @@ let natural_of_bool b =
 val unsafe_nat_of_natural : natural -> nat
 
 declare ocaml    target_rep function unsafe_nat_of_natural = `Nat_big_num.to_int`
+declare lean     target_rep function unsafe_nat_of_natural = ``
 declare isabelle target_rep function unsafe_nat_of_natural = ``
 declare hol      target_rep function unsafe_nat_of_natural = ``
 declare coq      target_rep function unsafe_nat_of_natural = ``
@@ -165,6 +171,7 @@ declare coq      target_rep function unsafe_nat_of_natural = ``
 val unsafe_int_of_natural   : natural -> int
 
 declare ocaml    target_rep function unsafe_int_of_natural = `Nat_big_num.to_int`
+declare lean     target_rep function unsafe_int_of_natural = `Int.ofNat`
 declare isabelle target_rep function unsafe_int_of_natural = `int`
 declare hol      target_rep function unsafe_int_of_natural x = `&` x
 declare coq      target_rep function unsafe_int_of_natural = `int_of_nat`
@@ -172,6 +179,7 @@ declare coq      target_rep function unsafe_int_of_natural = `int_of_nat`
 val byte_of_natural : natural -> byte
 
 declare ocaml    target_rep function byte_of_natural x = `Char.chr` (`Nat_big_num.to_int` x)
+declare lean     target_rep function byte_of_natural x = `Ml_bindings.char_chr` x
 declare isabelle target_rep function byte_of_natural m = (`of_nat` m `::` `byte`)
 declare hol      target_rep function byte_of_natural = `n2w` `:` `num` `->` `8` `word`
 declare coq      target_rep function byte_of_natural = `byte_of_nat`
@@ -213,6 +221,7 @@ let rec sort_by comp xs =
   end
 
 declare ocaml    target_rep function sort_by = `List.sort`
+declare lean     target_rep function sort_by = `sort_by_ordering`
 declare isabelle target_rep function sort_by = `Elf_Types_Local.merge_sort`
 
 (** [mapMaybei f xs] maps a function expecting an index (the position in the list
@@ -320,13 +329,14 @@ declare termination_argument unzip3 = automatic
 val null_byte : byte
 
 declare ocaml    target_rep function null_byte = `'\000'`
+declare lean     target_rep function null_byte = `(0 : UInt8)`
 declare isabelle target_rep function null_byte = `0` `::` `8` `word`
 declare hol      target_rep function null_byte = `0w` `:` `8` `word`
 declare coq      target_rep function null_byte = `null_byte`
 
 (** [null_char] is the null character. *)
 val null_char : char
-let {ocaml} null_char = char_of_byte null_byte
+let {ocaml; lean} null_char = char_of_byte null_byte
 
 declare isabelle target_rep function null_char = `String.char_of_nat` `0`
 declare hol      target_rep function null_char = `CHR` `0`
@@ -343,21 +353,25 @@ declare coq      target_rep function null_char = `null_char`
 (** [errln s] prints [s] to stderr, adding a trailing newline. *)
 val errln : string -> unit
 declare ocaml    target_rep function errln = `prerr_endline`
+declare lean     target_rep function errln = `Ml_bindings.errln`
 declare isabelle target_rep function errln x = `()`
 
 (** [errs s] prints [s] to stderr, without adding a trailing newline. *)
 val errs : string -> unit
 declare ocaml    target_rep function errs   = `prerr_string`
+declare lean     target_rep function errs = `Ml_bindings.errs`
 declare isabelle target_rep function errs x = `()`
 
 (** [outln s] prints [s] to stdout, adding a trailing newline. *)
 val outln : string -> unit
 declare ocaml    target_rep function outln = `print_endline`
+declare lean     target_rep function outln = `Ml_bindings.outln`
 declare isabelle target_rep function outln x = `()`
 
 (** [outs s] prints [s] to stdout, without adding a trailing newline. *)
 val outs : string -> unit
 declare ocaml    target_rep function outs   = `print_string`
+declare lean     target_rep function outs = `Ml_bindings.outs`
 declare isabelle target_rep function outs x = `()`
 
 (** [intercalate sep xs] places [sep] between all elements of [xs].
@@ -414,6 +428,7 @@ end
 val split_string_on_char : string -> char -> list string
 
 declare ocaml    target_rep function split_string_on_char = `Ml_bindings.split_string_on_char`
+declare lean     target_rep function split_string_on_char = `Ml_bindings.split_string_on_char`
 declare isabelle target_rep function split_string_on_char = `Elf_Types_Local.split_string_on_char`
 declare coq      target_rep function split_string_on_char = `split_string_on_char`
 
@@ -426,6 +441,7 @@ assert {ocaml} split_string_null : (let afterSplit = split_string_on_char (toStr
 (* [find_substring sub s] returns the index at which *)
 val find_substring : string -> string -> maybe natural
 declare ocaml    target_rep function find_substring = `Ml_bindings.find_substring`
+declare lean     target_rep function find_substring = `Ml_bindings.find_substring`
 declare hol      target_rep function find_substring = `ARB`
 declare isabelle target_rep function find_substring = `undefined`
 declare coq      target_rep function find_substring = `find_substring`
@@ -436,10 +452,12 @@ let string_contains s substr =
 
 val string_replace : string -> string -> string -> string
 declare ocaml target_rep function string_replace = `Ml_bindings.string_replace`
+declare lean     target_rep function string_replace = `Ml_bindings.string_replace`
 
 (** [string_of_nat m] produces a string representation of natural number [m]. *)
 val string_of_nat : nat -> string
 declare ocaml target_rep function string_of_nat = `string_of_int`
+declare lean     target_rep function string_of_nat = `Nat.repr`
 
 (** [string_suffix i s] returns all but the first [i] characters of [s].
   * Fails if the index is negative, or beyond the end of the string.
@@ -447,6 +465,7 @@ declare ocaml target_rep function string_of_nat = `string_of_int`
 val string_suffix : natural -> string -> maybe string
 
 declare ocaml    target_rep function string_suffix = `Ml_bindings.string_suffix`
+declare lean     target_rep function string_suffix = `Ml_bindings.string_suffix`
 declare isabelle target_rep function string_suffix = `Elf_Types_Local.string_suffix`
 declare hol      target_rep function string_suffix = `string_suffix` (* XXX: add custom binding *)
 declare coq      target_rep function string_suffix = `string_suffix`
@@ -454,10 +473,11 @@ declare coq      target_rep function string_suffix = `string_suffix`
 
 val nat_length : forall 'a. list 'a -> nat
 declare ocaml target_rep function nat_length = `List.length`
+declare lean     target_rep function nat_length = `List.length`
 
 val length : forall 'a. list 'a -> natural
-let ~{ocaml} length xs = List.foldl (fun y _ -> 1 + y) 0 xs
-let {ocaml} length xs = naturalFromNat (nat_length xs)
+let ~{ocaml; lean} length xs = List.foldl (fun y _ -> 1 + y) 0 xs
+let {ocaml; lean} length xs = naturalFromNat (nat_length xs)
 
 val takeRevAcc : forall 'a. natural -> list 'a -> list 'a -> list 'a
 let rec takeRevAcc m xs rev_acc =
@@ -503,6 +523,7 @@ let string_prefix m s =
       Just (String.toString (take m cs))
 
 declare ocaml target_rep function string_prefix = `Ml_bindings.string_prefix`
+declare lean     target_rep function string_prefix = `Ml_bindings.string_prefix`
 (* FIXME: isabelle *)
 
 (** [string_index_of c s] returns [Just(i)] where [i] is the index of the first
@@ -522,6 +543,7 @@ val string_index_of : char -> string -> maybe natural
 let string_index_of e s = string_index_of' e (String.toCharList s) 0
 
 declare ocaml target_rep function string_index_of = `Ml_bindings.string_index_of`
+declare lean     target_rep function string_index_of = `Ml_bindings.string_index_of`
 
 (** Claude: [string_sub i n s] returns the [n] characters of [s] starting at
   * index [i], or [Nothing] if that range does not lie within [s].  The OCaml
@@ -535,6 +557,7 @@ let string_sub i n s =
   end
 
 declare ocaml target_rep function string_sub = `Ml_bindings.string_sub`
+declare lean     target_rep function string_sub = `Ml_bindings.string_sub`
 
 (** Claude: [string_index_of_from c i s] returns [Just j] where [j] is the index
   * of the first occurrence of [c] in [s] at or after index [i], [Nothing] if
@@ -553,6 +576,7 @@ let string_index_of_from c i s =
   end
 
 declare ocaml target_rep function string_index_of_from = `Ml_bindings.string_index_of_from`
+declare lean     target_rep function string_index_of_from = `Ml_bindings.string_index_of_from`
 
 val index : forall 'a. natural -> list 'a -> maybe 'a
 let rec index m xs =
@@ -566,6 +590,7 @@ let rec index m xs =
   end
 
 declare ocaml    target_rep function index      = `Ml_bindings.list_index_big_int`
+declare lean     target_rep function index = `Ml_bindings.list_index_big_int`
 declare isabelle target_rep function index i xs = `Elf_Types_Local.index` xs i
 
 val find_index_helper : forall 'a. natural -> ('a -> bool) -> list 'a -> maybe natural

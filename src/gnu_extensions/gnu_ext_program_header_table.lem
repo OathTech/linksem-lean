@@ -33,7 +33,7 @@ let elf_pt_gnu_mbind_num : natural = 4096
   * GNU extension segment type [m].
   *)
 val string_of_gnu_ext_segment_type : natural -> string
-let {ocaml} string_of_gnu_ext_segment_type pt =
+let {ocaml; lean} string_of_gnu_ext_segment_type pt =
   if pt = elf_pt_gnu_relro then
     "GNU_RELRO"
   else if pt = elf_pt_gnu_stack then

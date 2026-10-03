@@ -16,7 +16,7 @@ open import Elf_section_header_table
   * of MIPS64 section type [m].
   *)
 val string_of_abi_mips64_section_type : natural -> string
-let {ocaml} string_of_abi_mips64_section_type m =
+let {ocaml; lean} string_of_abi_mips64_section_type m =
   "Invalid MIPS64 section type"
     
 (** Special sections *)

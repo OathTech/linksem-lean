@@ -61,7 +61,7 @@ let sht_sun_versym_old         : natural = (2 * 939524088)     (* 0x6ffffff0 *)
 let sht_sun_verdef_old         : natural = (2 * 939524094)     (* 0x6ffffffc *)
 
 val string_of_gnu_ext_section_type : natural -> string
-let {ocaml} string_of_gnu_ext_section_type i =
+let {ocaml; lean} string_of_gnu_ext_section_type i =
   if i = sht_gnu_hash then
     "GNU_HASH"
   else if i = sht_gnu_verdef then

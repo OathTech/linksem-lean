@@ -20,7 +20,7 @@ let sht_abi_amd64_unwind : natural = (939524096 * 2) + 1 (* 0x70000001 *)
   * of AMD64 section type [m].
   *)
 val string_of_abi_amd64_section_type : natural -> string
-let {ocaml} string_of_abi_amd64_section_type m =
+let {ocaml; lean} string_of_abi_amd64_section_type m =
   if m = sht_abi_amd64_unwind then
     "X86_64_UNWIND"
   else

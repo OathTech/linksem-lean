@@ -127,6 +127,7 @@ probably be better for execution but not for theorem-prover use.
 (* workaround debug.lem linking *)
 val print_endline : string -> unit
 declare ocaml target_rep function print_endline = `print_endline`
+declare lean     target_rep function print_endline = `Ml_bindings.outln`
 
 let my_debug s = () (*print_endline s*)
 let my_debug2 s = () (*print_endline s*)
@@ -150,9 +151,11 @@ let partialNaturalFromInteger (i:integer) : natural =
 
 val natural_nat_shift_left : natural -> nat -> natural
 declare ocaml    target_rep function natural_nat_shift_left = `Nat_big_num.shift_left`
+declare lean     target_rep function natural_nat_shift_left = `Nat.shiftLeft`
 
 val natural_nat_shift_right : natural -> nat -> natural
 declare ocaml    target_rep function natural_nat_shift_right = `Nat_big_num.shift_right`
+declare lean     target_rep function natural_nat_shift_right = `Nat.shiftRight`
 
 let rec sym_integer_of_symbolic_expression x = match x with
   | Section s -> sym_integer_section s
@@ -2132,6 +2135,7 @@ let pphex_sym = sym_natural_pp pphex
 val abs : integer -> natural
 (*declare hol      target_rep function abs = `int_of_num` *)
 declare ocaml    target_rep function abs = `Nat_big_num.abs`
+declare lean     target_rep function abs = `Int.natAbs`
 (*declare isabelle target_rep function abs = `int`
 declare coq      target_rep function abs n = (`Zpred` (`Zpos` (`P_of_succ_nat` n))) (* TODO: check*)
 *)
@@ -2154,6 +2158,7 @@ let rec ppbytesplain (c:p_context) (n:sym_natural) bs = show (natural_of_bytes c
 (* workaround: from String *)
 val mytoString : list char -> string
 declare ocaml    target_rep function mytoString = `Xstring.implode`
+declare lean     target_rep function mytoString = `String.ofList`
 
 let string_of_bytes bs = mytoString (List.map Missing_pervasives.char_of_byte bs)
 
@@ -7007,6 +7012,7 @@ Contents of the .eh_frame section:
 
 val mytoList        : forall 'a. SetType 'a => set 'a -> list 'a
 declare ocaml    target_rep function mytoList = `Pset.elements`
+declare lean     target_rep function mytoList = `setToList`
 
 let register_footprint_rrp (rrp: register_rule_map) : set cfa_register =
   Set.fromList (List.map Tuple.fst rrp)
@@ -9575,45 +9581,45 @@ let pp_dwarf_resolved regname (d:dwarf) : string =
       d.d_compilation_units)
 
 val harness_string_of_elf64_debug_info_raw : elf64_file -> relocation_interpreter reloc_target_data -> string
-let {ocaml} harness_string_of_elf64_debug_info_raw f1 ri =
+let {ocaml; lean} harness_string_of_elf64_debug_info_raw f1 ri =
   match extract_dwarf (ELF_File_64 f1) ri with   (* Claude: the dumps need no analysis *)
   | Nothing -> "<no dwarf information extracted>"
   | Just d -> pp_dwarf_raw d
   end
 
 val harness_string_of_elf64_debug_info_resolved : elf64_file -> relocation_interpreter reloc_target_data -> (natural -> string) -> string
-let {ocaml} harness_string_of_elf64_debug_info_resolved f1 ri regname =
+let {ocaml; lean} harness_string_of_elf64_debug_info_resolved f1 ri regname =
   match extract_dwarf (ELF_File_64 f1) ri with   (* Claude: the dumps need no analysis *)
   | Nothing -> "<no dwarf information extracted>"
   | Just d -> pp_dwarf_resolved regname d
   end
 
 val harness_string_of_elf64_debug_info_section : elf64_file -> relocation_interpreter reloc_target_data -> (*(sym_natural -> string) -> (sym_natural -> string) -> (sym_natural -> string) -> elf64_header -> elf64_section_header_table -> string_table -> *) string
-let {ocaml} harness_string_of_elf64_debug_info_section f1 (*os proc usr hdr sht stbl*) =
+let {ocaml; lean} harness_string_of_elf64_debug_info_section f1 (*os proc usr hdr sht stbl*) =
   harness_string_of_elf (ELF_File_64 f1)
 
 val harness_string_of_elf32_debug_info_section : elf32_file -> relocation_interpreter reloc_target_data -> (* (sym_natural -> string) -> (sym_natural -> string) -> (sym_natural -> string) -> elf32_header -> elf32_section_header_table -> string_table ->*) string
-let {ocaml} harness_string_of_elf32_debug_info_section f1 (*os proc usr hdr sht stbl*) =
+let {ocaml; lean} harness_string_of_elf32_debug_info_section f1 (*os proc usr hdr sht stbl*) =
   harness_string_of_elf (ELF_File_32 f1)
 
 
 
 val harness_string_of_elf64_like_objdump : elf64_file -> relocation_interpreter reloc_target_data -> (natural -> string) -> string
-let {ocaml} harness_string_of_elf64_like_objdump f1 ri regname =
+let {ocaml; lean} harness_string_of_elf64_like_objdump f1 ri regname =
   harness_string_of_elf_like_objdump (ELF_File_64 f1) ri regname
 
 (* Claude: readelf --debug-dump=abbrev, and readelf --debug-dump=info without
    --wide: the same text as objdump's, one section at a time and without
    objdump's file-format header *)
 val harness_string_of_elf64_debug_abbrev_like_readelf : elf64_file -> relocation_interpreter reloc_target_data -> string
-let {ocaml} harness_string_of_elf64_debug_abbrev_like_readelf f1 ri =
+let {ocaml; lean} harness_string_of_elf64_debug_abbrev_like_readelf f1 ri =
   match extract_dwarf (ELF_File_64 f1) ri with   (* Claude: the dumps need no analysis *)
   | Nothing -> "<no dwarf information extracted>"
   | Just d -> od_debug_abbrev_section d
   end
 
 val harness_string_of_elf64_debug_info_like_readelf : elf64_file -> relocation_interpreter reloc_target_data -> (natural -> string) -> string
-let {ocaml} harness_string_of_elf64_debug_info_like_readelf f1 ri regname =
+let {ocaml; lean} harness_string_of_elf64_debug_info_like_readelf f1 ri regname =
   match extract_dwarf (ELF_File_64 f1) ri with   (* Claude: the dumps need no analysis *)
   | Nothing -> "<no dwarf information extracted>"
   | Just d -> od_debug_info_section regname d
@@ -9622,7 +9628,7 @@ let {ocaml} harness_string_of_elf64_debug_info_like_readelf f1 ri regname =
 (* Claude: readelf --debug-dump=aranges, addr, str-offsets, macro and gdb_index
    (.debug_names), and the content checks of the accelerator and macro sections *)
 val harness_string_of_elf64_debug_section_like_readelf : string -> elf64_file -> relocation_interpreter reloc_target_data -> string
-let {ocaml} harness_string_of_elf64_debug_section_like_readelf which f1 ri =
+let {ocaml; lean} harness_string_of_elf64_debug_section_like_readelf which f1 ri =
   match extract_dwarf (ELF_File_64 f1) ri with
   | Nothing -> "<no dwarf information extracted>"
   | Just d ->
@@ -9636,7 +9642,7 @@ let {ocaml} harness_string_of_elf64_debug_section_like_readelf which f1 ri =
   end
 
 val harness_string_of_elf32_like_objdump : elf32_file -> relocation_interpreter reloc_target_data -> (natural -> string) -> string
-let {ocaml} harness_string_of_elf32_like_objdump f1 ri regname =
+let {ocaml; lean} harness_string_of_elf32_like_objdump f1 ri regname =
   harness_string_of_elf_like_objdump (ELF_File_32 f1) ri regname
 
     

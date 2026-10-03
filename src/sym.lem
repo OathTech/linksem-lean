@@ -11,15 +11,19 @@ end
 (* =========== *)
 type sym_natural
 declare ocaml    target_rep type sym_natural = `Sym_ocaml.Num.t`
+declare lean     target_rep type sym_natural = `Sym_ocaml.Num.natural`
 
 val sym_natural_const : natural -> sym_natural
 declare ocaml    target_rep function sym_natural_const = `Sym_ocaml.Num.of_num`
+declare lean     target_rep function sym_natural_const = `Sym_ocaml.Num.of_num`
 
 val sym_natural_section : string -> sym_natural
 declare ocaml    target_rep function sym_natural_section = `Sym_ocaml.Num.section`
+declare lean     target_rep function sym_natural_section = `Sym_ocaml.Num.section_`
 
 val sym_natural_expect_const : sym_natural -> natural
 declare ocaml    target_rep function sym_natural_expect_const = `Sym_ocaml.Num.to_num`
+declare lean     target_rep function sym_natural_expect_const = `Sym_ocaml.Num.to_num`
 
 (** Claude: [sym_natural_offset_part n] is the numeric part of [n]: the constant
   * itself for an absolute value, the offset for a section-relative one.  This is
@@ -28,12 +32,15 @@ declare ocaml    target_rep function sym_natural_expect_const = `Sym_ocaml.Num.t
   *)
 val sym_natural_offset_part : sym_natural -> natural
 declare ocaml    target_rep function sym_natural_offset_part = `Sym_ocaml.Num.offset_part`
+declare lean     target_rep function sym_natural_offset_part = `Sym_ocaml.Num.offset_part`
 
 val sym_natural_map : (natural -> natural) -> sym_natural -> sym_natural
 declare ocaml    target_rep function sym_natural_map = `Sym_ocaml.Num.map`
+declare lean     target_rep function sym_natural_map = `Sym_ocaml.Num.map`
 
 val sym_natural_map2 : (natural -> natural -> natural) -> sym_natural -> sym_natural -> sym_natural
 declare ocaml    target_rep function sym_natural_map2 = `Sym_ocaml.Num.map2`
+declare lean     target_rep function sym_natural_map2 = `Sym_ocaml.Num.map2`
 
 instance (Numeral sym_natural)
   let fromNumeral = fun x -> sym_natural_const (fromNumeral x)
@@ -41,6 +48,7 @@ end
 
 val sym_natural_pp : (natural -> string) -> sym_natural -> string
 declare ocaml    target_rep function sym_natural_pp = `Sym_ocaml.Num.ppf`
+declare lean     target_rep function sym_natural_pp = `Sym_ocaml.Num.ppf`
 
 instance (Show sym_natural)
   let show = sym_natural_pp show
@@ -48,6 +56,7 @@ end
 
 val sym_natural_add : sym_natural -> sym_natural -> sym_natural
 declare ocaml    target_rep function sym_natural_add = `Sym_ocaml.Num.add`
+declare lean     target_rep function sym_natural_add = `Sym_ocaml.Num.add`
 
 
 instance (NumAdd sym_natural)
@@ -56,6 +65,7 @@ end
 
 val sym_natural_sub : sym_natural -> sym_natural -> sym_natural
 declare ocaml    target_rep function sym_natural_sub = `Sym_ocaml.Num.sub_nat`
+declare lean     target_rep function sym_natural_sub = `Sym_ocaml.Num.sub_nat`
 
 instance (NumMinus sym_natural)
   let (-) = sym_natural_sub
@@ -63,6 +73,7 @@ end
 
 val sym_natural_mul : sym_natural -> sym_natural -> sym_natural
 declare ocaml    target_rep function sym_natural_mul = `Sym_ocaml.Num.mul`
+declare lean     target_rep function sym_natural_mul = `Sym_ocaml.Num.mul`
 
 instance (NumMult sym_natural)
   let ( * ) = sym_natural_mul
@@ -70,6 +81,7 @@ end
 
 val sym_natural_div : sym_natural -> sym_natural -> sym_natural
 declare ocaml    target_rep function sym_natural_div = `Sym_ocaml.Num.div`
+declare lean     target_rep function sym_natural_div = `Sym_ocaml.Num.div`
 
 instance (NumDivision sym_natural)
   let (/) = sym_natural_div
@@ -77,6 +89,7 @@ end
 
 val sym_natural_mod : sym_natural -> sym_natural -> sym_natural
 declare ocaml    target_rep function sym_natural_mod = `Sym_ocaml.Num.modulus`
+declare lean     target_rep function sym_natural_mod = `Sym_ocaml.Num.modulus`
 
 instance (NumRemainder sym_natural)
   let (mod) = sym_natural_mod
@@ -90,11 +103,17 @@ val sym_natural_greater_equal : sym_natural -> sym_natural -> bool
 val sym_natural_eq : sym_natural -> sym_natural -> bool
 
 declare ocaml    target_rep function sym_natural_compare = `Sym_ocaml.Num.compare`
+declare lean     target_rep function sym_natural_compare = `Sym_ocaml.Num.compare`
 declare ocaml    target_rep function sym_natural_less = `Sym_ocaml.Num.less`
+declare lean     target_rep function sym_natural_less = `Sym_ocaml.Num.less`
 declare ocaml    target_rep function sym_natural_less_equal = `Sym_ocaml.Num.less_equal`
+declare lean     target_rep function sym_natural_less_equal = `Sym_ocaml.Num.less_equal`
 declare ocaml    target_rep function sym_natural_greater = `Sym_ocaml.Num.greater`
+declare lean     target_rep function sym_natural_greater = `Sym_ocaml.Num.greater`
 declare ocaml    target_rep function sym_natural_greater_equal = `Sym_ocaml.Num.greater_equal`
+declare lean     target_rep function sym_natural_greater_equal = `Sym_ocaml.Num.greater_equal`
 declare ocaml    target_rep function sym_natural_eq = `Sym_ocaml.Num.equal`
+declare lean     target_rep function sym_natural_eq = `Sym_ocaml.Num.equal`
 
 (* Claude: a total order for sorting values that may lie in different
    sections: lexicographic on the section name and then the offset, with
@@ -104,8 +123,11 @@ val sym_natural_compare_lexicographic : sym_natural -> sym_natural -> ordering
 val sym_natural_less_lexicographic : sym_natural -> sym_natural -> bool
 val sym_natural_greater_lexicographic : sym_natural -> sym_natural -> bool
 declare ocaml    target_rep function sym_natural_compare_lexicographic = `Sym_ocaml.Num.compare_lexicographic`
+declare lean     target_rep function sym_natural_compare_lexicographic = `Sym_ocaml.Num.compare_lexicographic`
 declare ocaml    target_rep function sym_natural_less_lexicographic = `Sym_ocaml.Num.less_lexicographic`
+declare lean     target_rep function sym_natural_less_lexicographic = `Sym_ocaml.Num.less_lexicographic`
 declare ocaml    target_rep function sym_natural_greater_lexicographic = `Sym_ocaml.Num.greater_lexicographic`
+declare lean     target_rep function sym_natural_greater_lexicographic = `Sym_ocaml.Num.greater_lexicographic`
 
 instance (Ord sym_natural)
   let compare = sym_natural_compare
@@ -125,21 +147,27 @@ end
 (* =========== *)
 type sym_integer
 declare ocaml    target_rep type sym_integer = `Sym_ocaml.Num.t`
+declare lean     target_rep type sym_integer = `Sym_ocaml.Num.integer`
 
 val sym_integer_const : integer -> sym_integer
 declare ocaml    target_rep function sym_integer_const = `Sym_ocaml.Num.of_num`
+declare lean     target_rep function sym_integer_const = `Sym_ocaml.Num.of_num`
 
 val sym_integer_section : string -> sym_integer
 declare ocaml    target_rep function sym_integer_section = `Sym_ocaml.Num.section`
+declare lean     target_rep function sym_integer_section = `Sym_ocaml.Num.section_`
 
 val sym_integer_expect_const : sym_integer -> integer
 declare ocaml    target_rep function sym_integer_expect_const = `Sym_ocaml.Num.to_num`
+declare lean     target_rep function sym_integer_expect_const = `Sym_ocaml.Num.to_num`
 
 val sym_integer_map : (integer -> integer) -> sym_integer -> sym_integer
 declare ocaml    target_rep function sym_integer_map = `Sym_ocaml.Num.map`
+declare lean     target_rep function sym_integer_map = `Sym_ocaml.Num.map`
 
 val sym_integer_map2 : (integer -> integer -> integer) -> sym_integer -> sym_integer -> sym_integer
 declare ocaml    target_rep function sym_integer_map2 = `Sym_ocaml.Num.map2`
+declare lean     target_rep function sym_integer_map2 = `Sym_ocaml.Num.map2`
 
 instance (Numeral sym_integer)
   let fromNumeral = fun x -> sym_integer_const (fromNumeral x)
@@ -147,6 +175,7 @@ end
 
 val sym_integer_pp : (integer -> string) -> sym_integer -> string
 declare ocaml    target_rep function sym_integer_pp = `Sym_ocaml.Num.ppf`
+declare lean     target_rep function sym_integer_pp = `Sym_ocaml.Num.ppf`
 
 instance (Show sym_integer)
   let show = sym_integer_pp show
@@ -154,6 +183,7 @@ end
 
 val sym_integer_add : sym_integer -> sym_integer -> sym_integer
 declare ocaml    target_rep function sym_integer_add = `Sym_ocaml.Num.add`
+declare lean     target_rep function sym_integer_add = `Sym_ocaml.Num.add`
 
 
 instance (NumAdd sym_integer)
@@ -162,6 +192,7 @@ end
 
 val sym_integer_sub : sym_integer -> sym_integer -> sym_integer
 declare ocaml    target_rep function sym_integer_sub = `Sym_ocaml.Num.sub`
+declare lean     target_rep function sym_integer_sub = `Sym_ocaml.Num.sub`
 
 instance (NumMinus sym_integer)
   let (-) = sym_integer_sub
@@ -169,6 +200,7 @@ end
 
 val sym_integer_mul : sym_integer -> sym_integer -> sym_integer
 declare ocaml    target_rep function sym_integer_mul = `Sym_ocaml.Num.mul`
+declare lean     target_rep function sym_integer_mul = `Sym_ocaml.Num.mul`
 
 instance (NumMult sym_integer)
   let ( * ) = sym_integer_mul
@@ -176,6 +208,7 @@ end
 
 val sym_integer_div : sym_integer -> sym_integer -> sym_integer
 declare ocaml    target_rep function sym_integer_div = `Sym_ocaml.Num.div`
+declare lean     target_rep function sym_integer_div = `Sym_ocaml.Num.div`
 
 instance (NumDivision sym_integer)
   let (/) = sym_integer_div
@@ -183,6 +216,7 @@ end
 
 val sym_integer_mod : sym_integer -> sym_integer -> sym_integer
 declare ocaml    target_rep function sym_integer_mod = `Sym_ocaml.Num.modulus`
+declare lean     target_rep function sym_integer_mod = `Sym_ocaml.Num.modulus`
 
 instance (NumRemainder sym_integer)
   let (mod) = sym_integer_mod
@@ -196,11 +230,17 @@ val sym_integer_greater_equal : sym_integer -> sym_integer -> bool
 val sym_integer_eq : sym_integer -> sym_integer -> bool
 
 declare ocaml    target_rep function sym_integer_compare = `Sym_ocaml.Num.compare`
+declare lean     target_rep function sym_integer_compare = `Sym_ocaml.Num.compare`
 declare ocaml    target_rep function sym_integer_less = `Sym_ocaml.Num.less`
+declare lean     target_rep function sym_integer_less = `Sym_ocaml.Num.less`
 declare ocaml    target_rep function sym_integer_less_equal = `Sym_ocaml.Num.less_equal`
+declare lean     target_rep function sym_integer_less_equal = `Sym_ocaml.Num.less_equal`
 declare ocaml    target_rep function sym_integer_greater = `Sym_ocaml.Num.greater`
+declare lean     target_rep function sym_integer_greater = `Sym_ocaml.Num.greater`
 declare ocaml    target_rep function sym_integer_greater_equal = `Sym_ocaml.Num.greater_equal`
+declare lean     target_rep function sym_integer_greater_equal = `Sym_ocaml.Num.greater_equal`
 declare ocaml    target_rep function sym_integer_eq = `Sym_ocaml.Num.equal`
+declare lean     target_rep function sym_integer_eq = `Sym_ocaml.Num.equal`
 
 instance (Ord sym_integer)
   let compare = sym_integer_compare
@@ -220,7 +260,9 @@ end
 
 val symIntegerFromNatural : sym_natural -> sym_integer
 declare ocaml    target_rep function symIntegerFromNatural x= ``x
+declare lean     target_rep function symIntegerFromNatural = `Sym_ocaml.Num.toInteger`
 
 val partialSymNaturalFromInteger : sym_integer -> sym_natural
 declare ocaml    target_rep function partialSymNaturalFromInteger = `Sym_ocaml.Num.expect_nonneg`
+declare lean     target_rep function partialSymNaturalFromInteger = `Sym_ocaml.Num.expect_nonneg`
       

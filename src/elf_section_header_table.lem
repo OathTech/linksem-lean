@@ -350,7 +350,7 @@ let section_flag_letter machine osabi bit rest =
   * upwards (where [bit] is a power of two) and concatenates their letters.
   *)
 val section_flag_letters : natural -> natural -> natural -> natural -> string
-let rec {ocaml} section_flag_letters machine osabi bit f =
+let rec {ocaml; lean} section_flag_letters machine osabi bit f =
   if f = 0 || bit > f then
     ""
   else if natural_land f bit = 0 then
@@ -360,7 +360,7 @@ let rec {ocaml} section_flag_letters machine osabi bit f =
       letter ^ section_flag_letters machine osabi (2 * bit) rest
 
 val string_of_section_flags : natural -> natural -> natural -> string
-let {ocaml} string_of_section_flags machine osabi f =
+let {ocaml; lean} string_of_section_flags machine osabi f =
   let letters = section_flag_letters machine osabi 1 f in
   let len = String.stringLength letters in
   let pad =

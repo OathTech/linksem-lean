@@ -20,6 +20,7 @@ open import List
 open import Num
 open import String
 open import Tuple
+open import Either
 
 open import Byte_sequence
 open import Default_printing
@@ -230,9 +231,12 @@ let usage_text : string =
   ; "The DWARF dumps are implemented for ELF64 only."
   ]
 
-let run (flag:string) (arg:string) =
-  let res =
-    Byte_sequence.acquire arg    >>= fun bs0 ->
+(* Claude: [main_elf_run flag arg bs0] is the whole of [run] except its I/O:
+   it interprets [bs0] (the contents of file [arg]) as [flag] asks and
+   returns the text to print.  Split out of [run] (unchanged behaviour) so
+   that targets without top-level effects (the Lean port) can share it. *)
+val main_elf_run : string -> string -> byte_sequence -> error string
+let main_elf_run flag arg bs0 =
     repeatM' Elf_header.ei_nident bs0 (read_unsigned_char Endianness.default_endianness) >>= fun (ident, bs) ->
     match List.index ident 4 with
       | Nothing -> failwith "ELF ident transcription error"
@@ -406,13 +410,24 @@ let run (flag:string) (arg:string) =
         else
           failwith "ELF ident transcription error"
     end
-  in
+
+(* Claude: what [run] prints for a result: [Left] text to stderr, [Right]
+   text to stdout. *)
+val main_elf_render : error string -> either string string
+let main_elf_render res =
     match res with
-      | Fail err  -> Missing_pervasives.errln ("[!]: " ^ err)
-      | Success e -> Missing_pervasives.outln (show e)
+      | Fail err  -> Left ("[!]: " ^ err)
+      | Success e -> Right (show e)
     end
 
-let _ =
+let {ocaml} run (flag:string) (arg:string) =
+  match main_elf_render (Byte_sequence.acquire arg >>= fun bs0 -> main_elf_run flag arg bs0) with
+    | Left err -> Missing_pervasives.errln err
+    | Right e  -> Missing_pervasives.outln e
+  end
+
+(* Claude: the top level is OCaml-only; the Lean port's driver mirrors it. *)
+let {ocaml} _ =
   match argv with
     | _ :: flag :: rest ->
         if flag = "--help" then

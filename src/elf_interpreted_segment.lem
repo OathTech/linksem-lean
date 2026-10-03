@@ -99,7 +99,7 @@ type elf64_interpreted_segments = list elf64_interpreted_segment
   * segments flags (represented as a boolean triple).
   *)
 val string_of_flags : (bool * bool * bool) -> string
-let {ocaml} string_of_flags flags =
+let {ocaml; lean} string_of_flags flags =
   match flags with
     | (read, write, execute) ->
         bracket [show read; show write; show execute]
@@ -109,7 +109,7 @@ let {ocaml} string_of_flags flags =
   * of interpreted segment [seg].
   *)
 val string_of_elf32_interpreted_segment : elf32_interpreted_segment -> string
-let {ocaml} string_of_elf32_interpreted_segment seg =
+let {ocaml; lean} string_of_elf32_interpreted_segment seg =
   unlines [
     "Body of length: " ^ unsafe_hex_string_of_natural 16 (Byte_sequence.length seg.elf32_segment_body)
   ; "Segment type: " ^ string_of_segment_type (fun _ -> "ABI specific") (fun _ -> "ABI specific") seg.elf32_segment_type
@@ -124,7 +124,7 @@ let {ocaml} string_of_elf32_interpreted_segment seg =
   * of interpreted segment [seg].
   *)
 val string_of_elf64_interpreted_segment : elf64_interpreted_segment -> string
-let {ocaml} string_of_elf64_interpreted_segment seg =
+let {ocaml; lean} string_of_elf64_interpreted_segment seg =
   unlines [
     "Body of length: " ^ unsafe_hex_string_of_natural 16 (Byte_sequence.length seg.elf64_segment_body)
   ; "Segment type: " ^ string_of_segment_type (fun _ -> "ABI specific") (fun _ -> "ABI specific") seg.elf64_segment_type

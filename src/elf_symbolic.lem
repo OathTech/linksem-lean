@@ -10,6 +10,7 @@ open import Show
 (* TODO for debugging, remove *)
 val print_endline : string -> unit
 declare ocaml target_rep function print_endline = `print_endline`
+declare lean     target_rep function print_endline = `Ml_bindings.outln`
 
 
 open import Elf_types_native_uint

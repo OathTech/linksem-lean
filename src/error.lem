@@ -40,6 +40,7 @@ declare {isabelle} rename function fail = error_fail
 (** [(>>=)] is the monadic binding function for [error].
   *)
 val (>>=) : forall 'a 'b. error 'a -> ('a -> error 'b) -> error 'b
+declare {lean} ascii_rep function (>>=) = `error_bind`
 let bind x f =
   match x with
     | Success s -> f s
